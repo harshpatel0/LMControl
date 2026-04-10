@@ -23,9 +23,10 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
 
     print(f"[STEP_ORCHESTRATOR] Step Location: {step_count+1}/{len(step_list)}")
     step = step_list[step_count]
+
+    additional_context = None
     
     for iterations in range(1, MAX_ITERATIONS_PER_STEP):
-      additional_context = None
       step_result = actor_model.do_step(step, task, additional_context)
       action_result = parse_action(step_result)
 
@@ -34,15 +35,24 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
       time.sleep(action_settle_time)
       if action_result == "PROCEED":
         step_count = step_count + 1
+        additional_context = None
         break
+
       elif action_result == "STUCK":
         print(f"[STEP_ORCHESTRATOR] The Actor Model claims it is stuck, running another iteration with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
+        additional_context = f"{step_result['message']}"
+      
       elif action_result == "DONE":
         print("[STEP_ORCHESTRATOR] The actor model claims the task is done, hard exitting...")
         hard_exit = True
         break
+      
       elif action_result == "RETRY":
         print(f"[STEP_ORCHESTRATOR] The actor model or action parser is requesting a retry, retrying with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
+        additional_context = f"{step_result['message']}"
+      
+      else:
+        Exception("Theres a programming issue, action result cannot reach here. Maybe the LLM hallucinated an action, or you didnt deal with one")
   
 perform_steps(
 {
