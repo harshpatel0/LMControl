@@ -27,7 +27,7 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
     additional_context = None
     
     for iterations in range(1, MAX_ITERATIONS_PER_STEP):
-      step_result = actor_model.do_step(step, task, additional_context)
+      step_result = actor_model.do_step(step, task, additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step")
       action_result = parse_action(step_result)
 
       print(f"[STEP_ORCHESTRATOR] Can progress to next step? {action_result}")
@@ -65,37 +65,37 @@ perform_steps(
       "id": 1,
       "instruction": "Click Microsoft Edge in the taskbar.",
       "expected_result": "Microsoft Edge is the active window.",
-      "fallback": "Press Win+S, type Microsoft Edge, and press Enter."
+      "fallback": "If Edge is not visible, press Win+S, type Microsoft Edge, and press Enter."
     },
     {
       "id": 2,
-      "instruction": "Click the address bar and type youtube.com",
-      "expected_result": "The address bar contains 'youtube.com'.",
-      "fallback": "Press Ctrl+L, type youtube.com, and press Enter."
+      "instruction": "Type https://www.youtube.com into the Edge address bar.",
+      "expected_result": "The address bar contains 'https://www.youtube.com'.",
+      "fallback": "If the address bar is not visible, click the address bar and type 'https://www.youtube.com'."
     },
     {
       "id": 3,
       "instruction": "Press Enter",
       "expected_result": "The YouTube homepage is visible in the Edge browser window.",
-      "fallback": "Press Enter."
+      "fallback": "Press Enter key."
     },
     {
       "id": 4,
-      "instruction": "Click the search box and type Taarak Metha ka Ooltah Chasmah",
+      "instruction": "Click the YouTube search box and type Taarak Metha ka Ooltah Chasmah",
       "expected_result": "The search box contains 'Taarak Metha ka Ooltah Chasmah'.",
-      "fallback": "Press / to focus the search bar and type Taarak Metha ka Ooltah Chasmah."
+      "fallback": "Press / to focus the YouTube search bar and type 'Taarak Metha ka Ooltah Chasmah'."
     },
     {
       "id": 5,
       "instruction": "Press Enter",
       "expected_result": "The search results page for 'Taarak Metha ka Ooltah Chasmah' is visible in the Edge browser window.",
-      "fallback": "Press Enter."
+      "fallback": "Press Enter key."
     },
     {
       "id": 6,
       "instruction": "Click the first video result link titled Taarak Metha ka Ooltah Chasmah",
       "expected_result": "The video page for 'Taarak Metha ka Ooltah Chasmah' is loaded and visible in Edge.",
-      "fallback": "Scroll down in the main content area to find the video result and click it."
+      "fallback": "Scroll down in the main content area to find the first video result link titled 'Taarak Metha ka Ooltah Chasmah' and click it."
     }
   ]
 }

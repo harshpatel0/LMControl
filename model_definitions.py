@@ -58,6 +58,9 @@ These are NOT instructions — never use them as step instructions.
    Exception: "type" is always one step even though it internally clicks first —
    do NOT add a separate click step before a type step.
 
+- Never combine multiple actions into one response. If the step says "type X",
+  only type — do not also press Enter unless the step explicitly requires it.
+
 2. NO CARRY-OVER: Never assume focus, state, or position carries over from a
    prior step. Each step must be self-contained.
 
@@ -76,12 +79,19 @@ These are NOT instructions — never use them as step instructions.
    "Press Win+S, type [App Name], and press Enter."
 
 ## Navigation and Typing
-7. BROWSER NAVIGATION: Separate address bar focus and URL entry into one type
-   step: "Click the address bar and type [url]."
+7. BROWSER NAVIGATION: Before navigating to any URL, always open a new tab first
+   with a press_hotkey step using Ctrl+T. Then navigate via a type step targeting
+   the address bar: "Type [url] into the Edge address bar."
    Follow with a separate "Press Enter" step.
+   Never navigate an existing tab unless the task explicitly says to modify the
+   current page. Never add a separate click step before the type step — the type
+   action handles focus.
 
 8. TYPE TARGET: Every type step must name the specific UI element to type into.
    Never write "Type X" — always write "Click the [element name] and type X."
+   For page-level search boxes, the element name must be the site-specific name
+   (e.g. "YouTube search box"), never "address bar" or "search bar" generically.
+   The address bar is only valid for URL navigation steps.
 
 9. SEARCH FLOWS: Always split into three steps:
    (a) "Click the [search field] and type [query]"
@@ -130,6 +140,12 @@ These are NOT instructions — never use them as step instructions.
     Bad:  "type: win+r then youtube.com"
     Good: "Press Win+R, type youtube.com, and press Enter"
 
+## Tab Navigation
+18. TAB VERIFICATION: When switching browser tabs, the expected_result must
+    name the specific page title or URL that should be visible after the click.
+    Bad:  "The tab is selected"
+    Good: "The YouTube homepage is the active tab and visible in Edge"
+
 # Output Schema
 
 Return ONLY a valid JSON object. No prose, no markdown, no explanation.
@@ -163,10 +179,16 @@ Return ONLY a valid JSON object. No prose, no markdown, no explanation.
       messages=[
         {"role": "system", "content": self.system_prompt},
         {"role": "user", "content": task}
-      ]
+      ],
+      options={
+        "temperature": self.model_temperature
+      },
+      keep_alive=self.keep_alive,
+      format = self.output_format
     )
 
-    response = response.strip()
+    print(f"Thinking: {response.message.thinking}") 
+    response = response.message.content.strip()
     return response
 
   
@@ -179,20 +201,69 @@ OUTPUT CONTRACT:
 - You will be called repeatedly. Each call = one action only.
 
 DECISION LOGIC — follow in order:
-1. ALREADY DONE: If the screenshot shows the SUCCESS CONDITION is met → {{"action": "done"}}
+1. ALREADY DONE: If the screenshot confirms the final SUCCESS CONDITION of the
+   overall TASK (not just the current step) is fully met → {{"action": "done"}}
+   Do not emit "done" just because the current step's expected result is visible.
+   "done" means the user's original task is completely finished.
 2. ELEMENT FOUND: If the target element is in the tree or visible in the screenshot → return the appropriate action using its exact x/y from the tree.
 3. NAVIGATE: If the target is not visible but you know how to reach it (open app, scroll, click menu) → return that navigation action.
 4. RETRY: If you attempted an action but the screenshot shows it had no effect or the wrong effect,
    and you know what should be tried differently → {{"action": "retry", "message": "<instructions for next attempt>"}}
 5. STUCK: Only if the element is completely unreachable and you have no navigation path → {{"action": "stuck", "message": "<specific reason>"}}
+  See `STUCK THRESHOLD` for proper stuck call usage
 
 RULES:
 - Use x/y values from the ACCESSIBILITY TREE — do not invent coordinates.
 - If the ACTIVE WINDOW is unrelated to the step, your first action should reopen or focus the correct app.
 - Never return "stuck" when you have found the element or a path to it.
 - Never return "done" unless the SUCCESS CONDITION is visibly confirmed in the screenshot.
+- TAB SAFETY: Before typing a URL into the address bar, check if the active tab
+  contains content unrelated to the current task. If it does, press Ctrl+T to open
+  a new tab first. Never navigate away from an existing unrelated page.
+- SEARCH FIELD PRIORITY: When a step instructs you to type into a site-specific
+  search box (e.g. YouTube search box, Google search box), locate that element
+  in the ACCESSIBILITY TREE by name before acting. The browser address bar is
+  NEVER a valid substitute for a page-level search field. If the page search
+  element is not in the tree, use the fallback from the step — do not fall back
+  to the address bar on your own.
+- ELEMENT VERIFICATION: Before returning any click, double_click, or right_click
+  action, confirm the target element's name appears in the ACCESSIBILITY TREE
+  provided. If it does not appear in the tree, do NOT invent coordinates.
+  Instead, emit scroll_v to bring it into view, or emit retry with a message
+  explaining the element was not found in the current tree.
+- COORDINATE BOUNDS: Valid click targets are within the page content area.
+  The taskbar occupies the bottom ~40px of the screen. Never click y values
+  within that range unless the step explicitly targets a taskbar element.
 
 If the app is in the taskbar, use that to open it, otherwise use the system menus.
+
+WRONG WINDOW RECOVERY:
+- If the ACTIVE WINDOW is correct app but wrong page/tab, use the address bar
+  to navigate: press_hotkey ctrl+l, then type the target URL, then press_key enter.
+- Never declare stuck because you are on the wrong page within the correct app.
+
+STUCK THRESHOLD:
+- "Stuck" means the target element is unreachable AND you have exhausted:
+  (a) direct element interaction
+  (b) address bar navigation
+  (c) taskbar app launch
+  (d) Win+S search
+  Only after all four are impossible should you return stuck.
+
+STUCK HANDOFF MESSAGE:
+When you must declare stuck, your message is a briefing for the next agent instance
+that will take over. It must contain:
+  1. What the current step is asking for
+  2. What you tried and the exact outcome
+  3. The current screen state as you observe it
+  4. One concrete suggested recovery action for the next agent to attempt first
+
+Bad:  "I am on the wrong page and cannot find YouTube."
+Good: "Step requires YouTube search box. Navigated to Edge but landed on Claude tab.
+  Ctrl+L not attempted. Next agent should press Ctrl+L, type youtube.com, press Enter,
+  then locate the search box."
+
+If the app is in the taskbar, use that to open it, otherwise use Win+S.  
 
 VALID ACTIONS:
 {{"action": "click", "x": 123, "y": 456, "button": "left", "element": "<name>"}}
@@ -209,6 +280,10 @@ VALID ACTIONS:
 
 TYPE ACTION: The "type" action will automatically click x/y before typing.
 Always provide x/y pointing to the input field you want to type into.
+
+! COORDINATE SOURCE: All x/y values for actions must come from the ACCESSIBILITY
+  TREE, never estimated from the screenshot. The screenshot is for visual
+  confirmation only — its pixel positions do not correspond to screen coordinates.
 """
   
   def construct_user_prompt(self, task, instruction, expected_result, active_window, ui_tree, taskbar):
@@ -229,10 +304,12 @@ ControlType, name, x, y
 TASKBAR (located at the bottom of the screen, y ≈ {self.context_provider.screen_height - 20}): 
 Taskbar Elements
 {taskbar}
+
+# Additional Context is provided below (if the orchestrator has anything to say)
 """
     return user_prompt
 
-  def inject_additonal_context(self, user_prompt, additional_context, accompanying_message = "Looks like you already tried to do this task but got stuck, how would you recover from this? Here is the reason you said you were stuck"):
+  def inject_additonal_context(self, user_prompt, additional_context, accompanying_message = "A previous run of this step resulted in a `STUCK` or `RETRY` handoff, the agent gave instructions to you on how to recover, execute accordingly: "):
     user_prompt = user_prompt + f"\n{accompanying_message}\n{additional_context}"
     return user_prompt
   
@@ -255,7 +332,7 @@ Taskbar Elements
     }
 
     if attach_screenshot:
-      user_message["images"] = [self.context_provider.get_screenshot()]
+      user_message["images"] = [self.context_provider.get_screenshot(window_title=self.context_provider.get_active_window())]
 
     response = self.client.chat(
       model=self.model_name,
@@ -271,4 +348,11 @@ Taskbar Elements
     )
 
     response = response.message.content.strip()
+
+    if not response:
+      print("[Internal Guard] The model returned nothing, simulating a retry call for the step orchestrator")
+      response = """{
+"action": "retry",
+"message": "Model returned an empty response, likely due to context overload. Retry with the same step."}
+"""
     return response

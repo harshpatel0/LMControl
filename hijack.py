@@ -1,6 +1,6 @@
 import builtins
 
-DEBUG = True  # or load from env/config
+DEBUG = True
 
 _real_print = builtins.print
 
