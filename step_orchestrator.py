@@ -49,44 +49,53 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
       
       elif action_result == "RETRY":
         print(f"[STEP_ORCHESTRATOR] The actor model or action parser is requesting a retry, retrying with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
-        additional_context = f"{step_result['message']}"
+        try:
+          additional_context = f"{step_result['message']}"
+        except Exception:
+          additional_context = f"The Action Parser was not able to parse your action, you might have sent in the wrong format, or not populated some fields. Be more careful in this run!"
       
       else:
         Exception("Theres a programming issue, action result cannot reach here. Maybe the LLM hallucinated an action, or you didnt deal with one")
   
 perform_steps(
 {
-  "task": "Open a specific YouTube video.",
+  "task": "Open a Taarak Metha ka Ooltah Chasmah Video on YouTube",
   "steps": [
     {
       "id": 1,
       "instruction": "Click Microsoft Edge in the taskbar.",
-      "expected_result": "Microsoft Edge window is the active window.",
-      "fallback": "Press Windows Key + [Number corresponding to Edge's position in taskbar]"
+      "expected_result": "Microsoft Edge is the active window.",
+      "fallback": "Press Win+S, type Microsoft Edge, and press Enter."
     },
     {
       "id": 2,
-      "instruction": "In the address bar of Microsoft Edge, type 'youtube.com' and press Enter.",
-      "expected_result": "The YouTube homepage loads in the active Edge tab.",
-      "fallback": "Press Alt+D to focus the address bar, then type 'youtube.com' and press Enter."
+      "instruction": "Click the address bar and type youtube.com",
+      "expected_result": "The address bar contains 'youtube.com'.",
+      "fallback": "Press Ctrl+L, type youtube.com, and press Enter."
     },
     {
       "id": 3,
-      "instruction": "Click the search icon (magnifying glass) or press Ctrl+K to activate the search bar, then type 'Taarak Metha ka Ooltah Chasmah Video'.",
-      "expected_result": "The search query is entered into the YouTube search bar.",
-      "fallback": "Press Ctrl+L to focus the address bar, type 'youtube.com/search?q=' followed by the title, and press Enter."
+      "instruction": "Press Enter",
+      "expected_result": "The YouTube homepage is visible in the Edge browser window.",
+      "fallback": "Press Enter."
     },
     {
       "id": 4,
-      "instruction": "Press Enter or click the search button to execute the search.",
-      "expected_result": "The YouTube search results page for the specified video appear.",
-      "fallback": "Press Enter key."
+      "instruction": "Click the search box and type Taarak Metha ka Ooltah Chasmah",
+      "expected_result": "The search box contains 'Taarak Metha ka Ooltah Chasmah'.",
+      "fallback": "Press / to focus the search bar and type Taarak Metha ka Ooltah Chasmah."
     },
     {
       "id": 5,
-      "instruction": "Click the video link/thumbnail titled 'Taarak Metha ka Ooltah Chasmah Video' from the search results.",
-      "expected_result": "The video 'Taarak Metha ka Ooltah Chasmah Video' begins playing in the active Edge tab.",
-      "fallback": "If multiple links appear, click the top search result link/thumbnail."
+      "instruction": "Press Enter",
+      "expected_result": "The search results page for 'Taarak Metha ka Ooltah Chasmah' is visible in the Edge browser window.",
+      "fallback": "Press Enter."
+    },
+    {
+      "id": 6,
+      "instruction": "Click the first video result link titled Taarak Metha ka Ooltah Chasmah",
+      "expected_result": "The video page for 'Taarak Metha ka Ooltah Chasmah' is loaded and visible in Edge.",
+      "fallback": "Scroll down in the main content area to find the video result and click it."
     }
   ]
 }

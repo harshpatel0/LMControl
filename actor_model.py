@@ -12,9 +12,11 @@ def strip_markdown_json(raw: str) -> str:
     return raw.strip()
 
 # ACTOR_MODEL = "qwen2.5:3b"
-ACTOR_MODEL = "gemma4:e4b"
+# ACTOR_MODEL = "gemma4:e4b"
+ACTOR_MODEL = "gemma4:latest"
 
-client = ollama.Client(host='http://192.168.68.254:11434/')
+# client = ollama.Client(host='http://192.168.68.254:11434/')
+client = ollama.Client(host='http://localhost:11434/')
 
 def build_prompt(step, ui_tree, taskbar, active_window, task):
     return f"""
@@ -30,7 +32,7 @@ SUCCESS CONDITION: "{step['expected_result']}"
 
 ACTIVE WINDOW: {active_window}
 
-ACCESSIBILITY TREE (format: ControlType | name | center_x | center_y | w | h):
+ACCESSIBILITY TREE (format: ControlType | name | x | center_y):
 {ui_tree}
 
 DECISION LOGIC — follow in order:
@@ -108,5 +110,5 @@ def do_step(step, task, additional_context=None, punishment_tally=None):
 
     action = json.loads(strip_markdown_json(raw).strip())
     print(action)
-    
+
     return action

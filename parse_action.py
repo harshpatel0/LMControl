@@ -8,11 +8,15 @@ def parse_action(action):
     match action["action"]:
         case "click":
             print(f"DEBUG: Clicking at X={action['x']}, Y={action['y']} on element={action.get('element')}")
-            pc.click(
-                position_x=int(action["x"]),
-                position_y=int(action["y"]),
-                button=action.get("button", "left")
-            )
+
+            try:
+                pc.click(
+                    position_x=int(action["x"]),
+                    position_y=int(action["y"]),
+                    button=action.get("button", "left")
+                )
+            except KeyError:
+                return_command = "RETRY"
 
         case "type":
             pc.type_text(action["text"], action["x"], action["y"])

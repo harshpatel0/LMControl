@@ -27,7 +27,7 @@ class ContextProvider:
         target_y = int(element_bounding_box.top + element_bounding_box.height() / 2)
         
         elements.append(
-          f"{ctrl_type} | name='{element_name}' | x={target_x} y={target_y} w={element_bounding_box.width()} h={element_bounding_box.height()}"
+          f"{ctrl_type} | name='{element_name}' | x={target_x} y={target_y}"
         )
       except:
           continue
