@@ -1,8 +1,8 @@
 import json
-from model_definitions import ActorModel
+from models.model_definitions import ActorModel
 from context_provider import ContextProvider
-import utils
-from hijack import print
+import utils.utils as utils
+from utils.hijack import print
 
 ACTOR_MODEL_NAME = "gemma4:e4b"
 OLLAMA_SERVER = "http://192.168.68.254:11434"

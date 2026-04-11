@@ -1,5 +1,5 @@
-import actor_model
-from parse_action import parse_action
+import models.actor_model as actor_model
+from actor.parse_action import parse_action
 import time
 
 MAX_ITERATIONS_PER_STEP = 5

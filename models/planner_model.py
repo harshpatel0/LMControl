@@ -1,7 +1,7 @@
 import json
 from context_provider import ContextProvider
-from model_definitions import PlannerModel
-import utils
+from models.model_definitions import PlannerModel
+import utils.utils as utils
 
 MODEL_NAME = "gemma4:e4b"
 OLLAMA_SERVER = "http://192.168.68.254:11434/"
