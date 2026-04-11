@@ -8,7 +8,7 @@ ACTOR_MODEL_NAME = "gemma4:e4b"
 OLLAMA_SERVER = "http://192.168.68.254:11434"
 
 context = ContextProvider()
-actor_model = ActorModel(ACTOR_MODEL_NAME, OLLAMA_SERVER)
+actor_model = ActorModel(ACTOR_MODEL_NAME, OLLAMA_SERVER, keep_alive=10)
 
 def do_step(step, task, additional_context=None, punishment_tally=None):
     active_window = context.get_active_window()
@@ -29,10 +29,10 @@ def do_step(step, task, additional_context=None, punishment_tally=None):
     user_prompt = actor_model.construct_user_prompt(task=task, instruction=instruction, expected_result=expected_result, active_window=active_window, ui_tree=ui_tree, taskbar=taskbar)
 
     if additional_context:
-        actor_model.inject_additonal_context(user_prompt, additional_context)
+        user_prompt = actor_model.return_prompt_with_additional_context(user_prompt, additional_context)
         
     if punishment_tally:
-        actor_model.inject_additonal_context(user_prompt, punishment_tally, "Here are the number of iterations you have made on this task")
+        user_prompt = actor_model.return_prompt_with_additional_context(user_prompt, punishment_tally, "Here are the number of iterations you have made on this task")
     
     response = actor_model.run(user_prompt, attach_screenshot=True)
 

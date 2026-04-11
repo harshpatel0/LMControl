@@ -54,12 +54,21 @@ These are NOT instructions — never use them as step instructions.
 
 ## Structure
 
-1. ATOMICITY: Each step must contain exactly one actor action.
-   Exception: "type" is always one step even though it internally clicks first —
-   do NOT add a separate click step before a type step.
+1. ATOMICITY: One step = one physical action. A single keypress, a single click,
+   a single type. No exceptions.
 
-- Never combine multiple actions into one response. If the step says "type X",
-  only type — do not also press Enter unless the step explicitly requires it.
+   Examples of CORRECT atomic steps:
+   - "Press Ctrl+T"
+   - "Type https://www.youtube.com into the Edge address bar"
+   - "Press Enter"
+
+   Examples of WRONG combined steps:
+   - "Press Ctrl+L and type the URL" — two actions, split them
+   - "Click the search box and type the query" — two actions, split them
+   - "Open Edge and navigate to YouTube" — two actions, split them
+
+   The actor is called once per step. It cannot perform two physical actions
+   in one call.
 
 2. NO CARRY-OVER: Never assume focus, state, or position carries over from a
    prior step. Each step must be self-contained.
@@ -87,6 +96,11 @@ These are NOT instructions — never use them as step instructions.
    current page. Never add a separate click step before the type step — the type
    action handles focus.
 
+   
+After Ctrl+T, the new tab page will show a Bing search box. This must be ignored.
+The next step must always be typing the target URL into the Edge address bar, not
+into the new tab search box.
+
 8. TYPE TARGET: Every type step must name the specific UI element to type into.
    Never write "Type X" — always write "Click the [element name] and type X."
    For page-level search boxes, the element name must be the site-specific name
@@ -97,6 +111,8 @@ These are NOT instructions — never use them as step instructions.
    (a) "Click the [search field] and type [query]"
    (b) "Press Enter"
    (c) "Click [specific result]"
+
+   
 
 10. SCROLLING: If content may not be immediately visible (e.g. search results,
     long lists), add a scroll step before the click step.
@@ -193,7 +209,7 @@ Return ONLY a valid JSON object. No prose, no markdown, no explanation.
 
   
 class ActorModel(Model):
-  system_prompt = f"""
+  system_prompt = """
 You are a Windows 11 UI Execution Actor. Your only job is to output a single JSON action.
 
 OUTPUT CONTRACT:
@@ -202,14 +218,28 @@ OUTPUT CONTRACT:
 
 DECISION LOGIC — follow in order:
 1. ALREADY DONE: If the screenshot confirms the final SUCCESS CONDITION of the
-   overall TASK (not just the current step) is fully met → {{"action": "done"}}
+   overall TASK (not just the current step) is fully met → {"action": "done"}
    Do not emit "done" just because the current step's expected result is visible.
    "done" means the user's original task is completely finished.
 2. ELEMENT FOUND: If the target element is in the tree or visible in the screenshot → return the appropriate action using its exact x/y from the tree.
 3. NAVIGATE: If the target is not visible but you know how to reach it (open app, scroll, click menu) → return that navigation action.
 4. RETRY: If you attempted an action but the screenshot shows it had no effect or the wrong effect,
-   and you know what should be tried differently → {{"action": "retry", "message": "<instructions for next attempt>"}}
-5. STUCK: Only if the element is completely unreachable and you have no navigation path → {{"action": "stuck", "message": "<specific reason>"}}
+   and you know what should be tried differently → {"action": "retry", "message": "<instructions for next attempt>"}
+4.1 REPLAN: If the current step instruction contains multiple actions and cannot
+   be executed as a single physical action — do NOT execute anything. Return:
+   {"action": "replan", "completed": "nothing", "next": "<single atomic action to perform>"}
+   
+   The "next" field must be one single physical action described in plain English
+   with enough detail for the next instance to execute it — include the element
+   name and any relevant context.
+   
+   Example:
+   Step: "Click the YouTube search box and type Taarak Metha ka OOltah Chasmah"
+   → {"action": "replan", "completed": "nothing", "next": "Click the YouTube search box at the top of the page"}
+   
+   The orchestrator will retry this step with your "next" field as the sole instruction.
+   You will be called again to execute it. Do not attempt the action yourself.
+5. STUCK: Only if the element is completely unreachable and you have no navigation path → {"action": "stuck", "message": "<specific reason>"}}
   See `STUCK THRESHOLD` for proper stuck call usage
 
 RULES:
@@ -234,6 +264,11 @@ RULES:
 - COORDINATE BOUNDS: Valid click targets are within the page content area.
   The taskbar occupies the bottom ~40px of the screen. Never click y values
   within that range unless the step explicitly targets a taskbar element.
+- NEW TAB SEARCH BOX: The Edge new tab page contains a Bing search box. This is
+  NOT a valid substitute for any site-specific search. If the current step requires
+  navigating to a URL, the new tab search box must never be used. Always type the
+  full URL into the Edge address bar (Ctrl+L then type), never into the new tab
+  search box.
 
 If the app is in the taskbar, use that to open it, otherwise use the system menus.
 
@@ -266,17 +301,18 @@ Good: "Step requires YouTube search box. Navigated to Edge but landed on Claude 
 If the app is in the taskbar, use that to open it, otherwise use Win+S.  
 
 VALID ACTIONS:
-{{"action": "click", "x": 123, "y": 456, "button": "left", "element": "<name>"}}
-{{"action": "double_click", "x": 123, "y": 456, "element": "<name>"}}
-{{"action": "right_click", "x": 123, "y": 456, "element": "<name>"}}
-{{"action": "type", "text": "<content>", "x": 123, "y": 456}}
-{{"action": "press_key", "key": "<key>"}}
-{{"action": "press_hotkey", "keys": ["ctrl", "c"]}}
-{{"action": "scroll_v", "x": 960, "y": 540, "amount": -3}}
-{{"action": "scroll_h", "x": 960, "y": 540, "amount": -3}}
-{{"action": "done"}}
-{{"action": "stuck", "message": "<reason>"}}
-{{"action": "retry", "message": "<what was attempted, why it failed, and what the next instance should do differently>"}}
+{"action": "click", "x": 123, "y": 456, "button": "left", "element": "<name>"}}
+{"action": "double_click", "x": 123, "y": 456, "element": "<name>"}}
+{"action": "right_click", "x": 123, "y": 456, "element": "<name>"}}
+{"action": "type", "text": "<content>", "x": 123, "y": 456}}
+{"action": "press_key", "key": "<key>"}}
+{"action": "press_hotkey", "keys": ["ctrl", "c"]}}
+{"action": "scroll_v", "x": 960, "y": 540, "amount": -3}}
+{"action": "scroll_h", "x": 960, "y": 540, "amount": -3}}
+{"action": "done"}}
+{"action": "stuck", "message": "<reason>"}}
+{"action": "retry", "message": "<what was attempted, why it failed, and what the next instance should do differently>"}}
+{"action": "replan", "completed": "nothing", "next": "<single atomic action in plain English>"}
 
 TYPE ACTION: The "type" action will automatically click x/y before typing.
 Always provide x/y pointing to the input field you want to type into.
@@ -309,7 +345,7 @@ Taskbar Elements
 """
     return user_prompt
 
-  def inject_additonal_context(self, user_prompt, additional_context, accompanying_message = "A previous run of this step resulted in a `STUCK` or `RETRY` handoff, the agent gave instructions to you on how to recover, execute accordingly: "):
+  def return_prompt_with_additional_context(self, user_prompt, additional_context, accompanying_message = "A previous run of this step resulted in a `STUCK` or `RETRY` handoff, the agent gave instructions to you on how to recover, execute accordingly: "):
     user_prompt = user_prompt + f"\n{accompanying_message}\n{additional_context}"
     return user_prompt
   
@@ -346,6 +382,9 @@ Taskbar Elements
       keep_alive=self.keep_alive,
       format=self.output_format
     )
+
+    if hasattr(response.message, 'thinking') and response.message.thinking:
+      print(f"Thinking: {response.message.thinking}")
 
     response = response.message.content.strip()
 

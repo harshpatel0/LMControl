@@ -1,6 +1,7 @@
 import models.actor_model as actor_model
 from actor.parse_action import parse_action
 import time
+import models.planner_model
 
 MAX_ITERATIONS_PER_STEP = 5
 ACTION_SETTLE_TIME = 2
@@ -17,20 +18,35 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
   step_count = 0
   hard_exit = False
 
-  while step_count < len(step_list):
+  while step_count < len(step_list)*2:
     if hard_exit:
       break
 
+    in_autonomy = step_count >= len(step_list)
+
+    if in_autonomy:
+      print("[STEP_ORCHESTRATOR > AUTONOMY MODE] Running in Basic Autonomy Mode")
+      step = {
+        "instruction": "Autonomy Mode — the planned steps are complete but the task may not be done. Continue independently and call done when finished. Your hand is not going to be held in this mode, so just complete the task how you think you can.",
+        "expected_result": "The original task is fully complete."
+      }
+    else:
+      step = step_list[step_count]
+
     print(f"[STEP_ORCHESTRATOR] Step Location: {step_count+1}/{len(step_list)}")
-    step = step_list[step_count]
 
     additional_context = None
     
     for iterations in range(1, MAX_ITERATIONS_PER_STEP):
+      if iterations == MAX_ITERATIONS_PER_STEP:
+        print("[STEP_ORCHESTRATOR] Cutting my losses while I can, quitting.")
+        hard_exit = True
+        break
+      
       step_result = actor_model.do_step(step, task, additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step")
       action_result = parse_action(step_result)
 
-      print(f"[STEP_ORCHESTRATOR] Can progress to next step? {action_result}")
+      print(f"[STEP_ORCHESTRATOR] Action Result: {action_result}")
 
       time.sleep(action_settle_time)
       if action_result == "PROCEED":
@@ -46,6 +62,11 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
         print("[STEP_ORCHESTRATOR] The actor model claims the task is done, hard exitting...")
         hard_exit = True
         break
+
+      elif action_result == "REPLAN":
+        next_action = step_result.get('next', '')
+        print(f"[STEP_ORCHESTRATOR] Replan requested, overriding instruction.")
+        additional_context = f"Ignore the original step instruction. Execute this single atomic action only: {next_action}"
       
       elif action_result == "RETRY":
         print(f"[STEP_ORCHESTRATOR] The actor model or action parser is requesting a retry, retrying with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
@@ -58,45 +79,7 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
         Exception("Theres a programming issue, action result cannot reach here. Maybe the LLM hallucinated an action, or you didnt deal with one")
   
 perform_steps(
-{
-  "task": "Open a Taarak Metha ka Ooltah Chasmah Video on YouTube",
-  "steps": [
-    {
-      "id": 1,
-      "instruction": "Click Microsoft Edge in the taskbar.",
-      "expected_result": "Microsoft Edge is the active window.",
-      "fallback": "If Edge is not visible, press Win+S, type Microsoft Edge, and press Enter."
-    },
-    {
-      "id": 2,
-      "instruction": "Type https://www.youtube.com into the Edge address bar.",
-      "expected_result": "The address bar contains 'https://www.youtube.com'.",
-      "fallback": "If the address bar is not visible, click the address bar and type 'https://www.youtube.com'."
-    },
-    {
-      "id": 3,
-      "instruction": "Press Enter",
-      "expected_result": "The YouTube homepage is visible in the Edge browser window.",
-      "fallback": "Press Enter key."
-    },
-    {
-      "id": 4,
-      "instruction": "Click the YouTube search box and type Taarak Metha ka Ooltah Chasmah",
-      "expected_result": "The search box contains 'Taarak Metha ka Ooltah Chasmah'.",
-      "fallback": "Press / to focus the YouTube search bar and type 'Taarak Metha ka Ooltah Chasmah'."
-    },
-    {
-      "id": 5,
-      "instruction": "Press Enter",
-      "expected_result": "The search results page for 'Taarak Metha ka Ooltah Chasmah' is visible in the Edge browser window.",
-      "fallback": "Press Enter key."
-    },
-    {
-      "id": 6,
-      "instruction": "Click the first video result link titled Taarak Metha ka Ooltah Chasmah",
-      "expected_result": "The video page for 'Taarak Metha ka Ooltah Chasmah' is loaded and visible in Edge.",
-      "fallback": "Scroll down in the main content area to find the first video result link titled 'Taarak Metha ka Ooltah Chasmah' and click it."
-    }
-  ]
-}
+  # steps=models.planner_model.make_plan("Open a Taarak Metha ka OOltah Chasmah Video on YouTube"),
+  steps=models.planner_model.make_plan("Search up horses on Google"),
+  action_settle_time=1
 )
