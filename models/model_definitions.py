@@ -9,6 +9,8 @@ class Model:
   model_temperature = 0.1
   model_name = ""
 
+  context_provider = ContextProvider()
+
   def __init__(self, ollama_server, model_name, model_temperature=0.1, output_format="json", keep_alive = 0):
     self.output_format = output_format
     self.ollama_server = ollama_server
@@ -18,19 +20,10 @@ class Model:
     self.model_name = model_name
 
 class PlannerModel(Model):
-  context_provider = ContextProvider()
-
   system_prompt = f"""
 You are the Architect for a Windows 11 Automation System.
 Your job is to decompose a user's task into a precise, ordered sequence of
 atomic steps for a downstream execution actor.
-
-# PC Environment
-OS: {context_provider.WINDOWS_VERSION}
-Screen: {context_provider.screen_width}x{context_provider.screen_height}
-Pinned Taskbar Apps: {context_provider.get_pinned_apps()}
-Installed Apps: {context_provider.installed_apps}
-Active Window: "{context_provider.get_active_window()}"
 
 # Actor Capabilities
 
@@ -112,8 +105,6 @@ into the new tab search box.
    (b) "Press Enter"
    (c) "Click [specific result]"
 
-   
-
 10. SCROLLING: If content may not be immediately visible (e.g. search results,
     long lists), add a scroll step before the click step.
     Use: "Scroll down in [area] to find [target element]."
@@ -190,11 +181,24 @@ Return ONLY a valid JSON object. No prose, no markdown, no explanation.
     self.client = ollama.Client(host=self.ollama_server)
   
   def run(self, task):
+
+    user_prompt = f"""
+# PC Environment
+OS: {self.context_provider.WINDOWS_VERSION}
+Screen: {self.context_provider.screen_width}x{self.context_provider.screen_height}
+Pinned Taskbar Apps: {self.context_provider.get_pinned_apps()}
+Installed Apps: {self.context_provider.installed_apps}
+Active Window: "{self.context_provider.get_active_window()}"
+
+# Task (What the user wants to do)
+> {task}
+    """
+
     response = self.client.chat(
       model=self.model_name,
       messages=[
         {"role": "system", "content": self.system_prompt},
-        {"role": "user", "content": task}
+        {"role": "user", "content": user_prompt}
       ],
       options={
         "temperature": self.model_temperature
