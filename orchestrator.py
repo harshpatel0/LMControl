@@ -80,6 +80,6 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
   
 perform_steps(
   # steps=models.planner_model.make_plan("Open a Taarak Metha ka OOltah Chasmah Video on YouTube"),
-  steps=models.planner_model.make_plan("Search up horses on Google"),
+  steps=models.planner_model.make_plan("Search horses on Google"),
   action_settle_time=1
 )
