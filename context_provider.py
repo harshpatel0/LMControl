@@ -18,6 +18,8 @@ class ContextProvider:
     "RadioButton", "Slider", "ToolBar", "SearchBox", "Text"
   }
 
+  seen = set()
+  
   def _get_elements_from_window(self, window):
     elements = []
     
@@ -29,7 +31,6 @@ class ContextProvider:
       win_left, win_top, win_right, win_bottom = 0, 0, self.screen_width, self.screen_height
 
     for el in window.descendants():
-      seen = set()
       try:
         ctrl_type = el.element_info.control_type
 
