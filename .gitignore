@@ -3,6 +3,9 @@ __pycache__/
 # Experimenting with Local AI Autocomplete Models
 .env
 
+# Runtime stuff
+.lmcontrol_venv
+
 # WIP and Proposed Features that are not ready to ship
 modules/
 skills/
