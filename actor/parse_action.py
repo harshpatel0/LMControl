@@ -19,7 +19,8 @@ def parse_action(action):
         return_command = "RETRY"
 
     case "type":
-      pc.type_text(action["text"], action["x"], action["y"])
+      pc.type_text(action["text"], action.get("x"), action.get("y"))
+      pc.press_key('enter')
 
     case "press_key":
       pc.press_key(action["key"])

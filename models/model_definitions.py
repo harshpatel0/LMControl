@@ -1,3 +1,6 @@
+import rootutils
+root = rootutils.setup_root(__file__, pythonpath=True)
+
 from context_provider import ContextProvider
 import ollama
 
@@ -83,37 +86,42 @@ These are NOT instructions — never use them as step instructions.
 
 ## Navigation and Typing
 
-7. BROWSER NAVIGATION SEQUENCE: Every URL navigation must follow this exact
-  four-step sequence with no exceptions and no steps combined:
-  (a) Press Ctrl+T        — opens a new tab
-  (b) Press Ctrl+L        — focuses the address bar
-  (c) Type [full URL] into the Edge address bar
-  (d) Press Enter
+7. BROWSER NAVIGATION: Every URL navigation must follow this two-step sequence:
+   (a) Press Ctrl+L — focuses the browser's address bar.
+   (b) Type [full URL] into the Edge address bar. 
+   
+   RATIONALE: The 'type' action automatically submits the URL. Do not add a 
+   separate 'Press Enter' step. If navigation fails, the fallback is to 
+   repeat Ctrl+L and re-type.
 
-  Never skip Ctrl+T. Never skip Ctrl+L. Never combine any of these steps.
-  Never type a URL without a preceding Ctrl+L step.
-  Never navigate an existing tab unless the task explicitly says to modify the
-  current page.
+8. TYPE TARGET: 
+   - For URLs: Always target the "Edge address bar" after Ctrl+L.
+   - For Site-Specific Search: Target the "YouTube search box".
+   - Note: Every 'type' instruction implies execution/submission. 
 
-  After Ctrl+T, the new tab page shows a Bing search box. This must be ignored.
-  Ctrl+L must always follow Ctrl+T before any typing — the type step targets
-  the address bar only after Ctrl+L has focused it.
+9. SEARCH FLOWS: Search is now a two-step process:
+   (a) Confirm the site (e.g., YouTube) is loaded via the previous expected_result.
+   (b) Type [query] into the [site] search box.
+   
+   Expected Result: The search results page for [query] is visible.
 
-8. TYPE TARGET: Every type step must name the specific UI element to type into.
-  Never write "Type X" — always write "Type X into the [element name]".
-  For page-level search boxes, the element name must be the site-specific name
-  (e.g. "YouTube search box", "Google search box"), never "address bar" or
-  "search bar" generically.
-  The address bar is only valid for URL navigation steps that follow a Ctrl+L step.
+   RATIONALE: The search box in the middle of a New Tab page is a web element 
+   that often fails or redirects to search results instead of the intended page. 
+   The address bar is a native system control and is 100% reliable.
 
-9. SEARCH FLOWS: Always split into three steps:
-  (a) "Type [query] into the [site] search box"
-  (b) "Press Enter"
-  (c) "Click [specific result]"
+8. TYPE TARGET: 
+   - For URLs: Always target the "Edge address bar" after a Ctrl+L step.
+   - For Site-Specific Search (e.g., searching *inside* YouTube once loaded): 
+     Target the "YouTube search box".
+   - IF THE PAGE IS NOT LOADED: Do not attempt to use an in-page search box. 
+     Navigate to the site first.
 
-  The search type step must only appear AFTER the page is confirmed loaded in
-  the expected_result of the preceding navigation step. Never instruct the actor
-  to type into a search box before the page is open.
+9. SEARCH FLOWS: 
+   If the user wants to search for something general (e.g., "Search for weather"),
+   prefer the browser address bar:
+   (a) Press Ctrl+L
+   (b) Type [query] into the Edge address bar
+   (c) Press Enter
 
 10. SCROLLING: If content may not be immediately visible (e.g. search results,
     long lists), add a scroll step before the click step.
@@ -169,6 +177,10 @@ These are NOT instructions — never use them as step instructions.
     Bad:  "The tab is selected"
     Good: "The YouTube homepage is the active tab and visible in Edge"
 
+20. RESULT SELECTION: When clicking a search result, always instruct the actor to click the video title or thumbnail image specifically. Avoid clicking "Knowledge Panels," "People Also Ask," or generic "Drama/Comedy" labels.
+Good: "Click the video title link for the first result..."
+Bad: "Click the search result for [Show Name]..." (Too vague, leads to clicking non-links).
+
 # Output Schema
 
 Return ONLY a valid JSON object. No prose, no markdown, no explanation.
@@ -184,6 +196,20 @@ Return ONLY a valid JSON object. No prose, no markdown, no explanation.
     }}
   ]
 }}
+
+! Before outputting, verify every step contains exactly one action. If any step instruction contains the words 'and' or 'then', split it.
+## Pre-Output Verification
+
+Before writing the JSON output, check every instruction you have written:
+- Does any instruction contain the word "and"? Split it into two steps.
+- Does any instruction contain the word "then"? Split it into two steps.
+- Does any instruction describe more than one physical action? Split it.
+
+A step like "Press Win+S, type Google Chrome, and press Enter" contains three
+actions and must become three separate steps:
+  Step N:   Press Win+S
+  Step N+1: Type Google Chrome into the Windows search box
+  Step N+2: Press Enter
 """
   def __init__(self, model_name, ollama_server, model_temperature=0.1, output_format = 'json', keep_alive = 0):
     super().__init__(
@@ -205,6 +231,9 @@ Screen: {self.context_provider.screen_width}x{self.context_provider.screen_heigh
 Pinned Taskbar Apps: {self.context_provider.get_pinned_apps()}
 Installed Apps: {self.context_provider.installed_apps}
 Active Window: "{self.context_provider.get_active_window()}"
+
+Current Taskbar Setup Accessibility Tree
+{self.context_provider.get_taskbar_elements()}
 
 # Task (What the user wants to do)
 > {task}
@@ -278,9 +307,9 @@ RULES:
   to the address bar on your own.
 - ELEMENT VERIFICATION: Before returning any click, double_click, or right_click
   action, confirm the target element's name appears in the ACCESSIBILITY TREE
-  provided. If it does not appear in the tree, do NOT invent coordinates.
-  Instead, emit scroll_v to bring it into view, or emit retry with a message
-  explaining the element was not found in the current tree.
+  provided. If it does not appear in the tree, you MUST emit scroll_v to bring
+  it into view, or emit retry explaining the element was not found.
+  Emitting a click with invented coordinates is a critical failure — never do it.
 - COORDINATE BOUNDS: Valid click targets are within the page content area.
   The taskbar occupies the bottom ~40px of the screen. Never click y values
   within that range unless the step explicitly targets a taskbar element.
@@ -289,13 +318,61 @@ RULES:
   navigating to a URL, the new tab search box must never be used. Always type the
   full URL into the Edge address bar (Ctrl+L then type), never into the new tab
   search box.
+- BROWSER CONTROL OVERRIDE: If a step involves typing a URL or a general 
+  search query, the Browser Address Bar (Omnibox) is your primary target. 
+  Even if you see a search box in the middle of the "New Tab" page (Bing/Google), 
+  DO NOT use it. It is slower and prone to focus errors.
+  
+- ADDRESS BAR FOCUS: Before typing into an address bar, you MUST ensure it is 
+  focused. If the tree doesn't show focus on the address bar, emit 
+  {"action": "press_hotkey", "keys": ["ctrl", "l"]} before typing.
 
-If the app is in the taskbar, use that to open it, otherwise use the system menus.
+- NEW TAB SEARCH BOX BAN: You are strictly prohibited from clicking or 
+  typing into the search field located in the center of a browser's "New Tab" 
+  content area. This is a "trap" element. Use the address bar at the top of 
+  the window instead.
+
+- REPLAN ON AMBIGUITY: If a step says "Type X into the search bar" and you 
+  see both a browser address bar and a web-page search box, choose the 
+  browser address bar by default unless the page is a specific application 
+  (like YouTube or GitHub) and the navigation to that app is already complete.
+
+If the app is in the taskbar, use that to open it, otherwise use Win+S.
+
+MODERN WINDOWS UI — EMPTY ACCESSIBILITY TREE:
+Some Windows shell components do not expose their UI elements via the accessibility
+tree. This is expected behaviour, not an error. The following windows will often
+return an empty or near-empty tree:
+
+  - Active Window: "Search" — the Windows Search overlay (opened via Win+S)
+  - Active Window: "Start" — the Start Menu
+
+When the active window is "Search" or "Start" and the tree is empty or has 1
+element, do NOT emit stuck, retry, or replan. Instead:
+  - If the step requires typing a search query: emit a type action WITHOUT
+    x/y coordinates. Search and Start Menu accept keyboard input immediately
+    after opening — no click is needed to establish focus.
+  - If the step requires pressing Enter to launch a result: emit press_key enter.
+  - Never attempt to locate a named element in the Search or Start tree.
+
+Example — correct behaviour when Active Window is "Search", tree has 1 element,
+step is "Type Google Chrome into the Windows search box":
+  → {"action": "type", "text": "Google Chrome"}
+
+Example — incorrect behaviour:
+  → {"action": "type", "text": "Google Chrome", "x": 960, "y": 540}
+  → {"action": "stuck", "message": "Cannot find search box in tree"}
+  → {"action": "replan", "next": "Press the Windows key to open Start Menu"}
 
 WRONG WINDOW RECOVERY:
 - If the ACTIVE WINDOW is correct app but wrong page/tab, use the address bar
   to navigate: press_hotkey ctrl+l, then type the target URL, then press_key enter.
 - Never declare stuck because you are on the wrong page within the correct app.
+
+SEARCH RESULT RECOVERY: 
+  If a click on a search result does not result in a page change (title remains the same), do NOT click the same coordinate again.
+  Identify a different part of the result (e.g., if you clicked the text, now click the thumbnail).
+  If the UI tree only shows one element, use scroll_v to find a more traditional list of results further down the page.
 
 STUCK THRESHOLD:
 - "Stuck" means the target element is unreachable AND you have exhausted:
@@ -325,6 +402,15 @@ VALID ACTIONS:
 {"action": "double_click", "x": 123, "y": 456, "element": "<name>"}}
 {"action": "right_click", "x": 123, "y": 456, "element": "<name>"}}
 {"action": "type", "text": "<content>", "x": 123, "y": 456}}
+
+TYPE ACTION: The "type" action has two modes:
+- With x/y: clicks the target element first, then types into it.
+- Without x/y: types directly without clicking. Use this when focus is
+  already guaranteed, such as immediately after opening Windows Search
+  or the Start Menu.
+
+  {"action": "type", "text": "<content>"}
+
 {"action": "press_key", "key": "<key>"}}
 {"action": "press_hotkey", "keys": ["ctrl", "c"]}}
 {"action": "scroll_v", "x": 960, "y": 540, "amount": -3}}
@@ -340,6 +426,57 @@ Always provide x/y pointing to the input field you want to type into.
 ! COORDINATE SOURCE: All x/y values for actions must come from the ACCESSIBILITY
   TREE, never estimated from the screenshot. The screenshot is for visual
   confirmation only — its pixel positions do not correspond to screen coordinates.
+
+! If you cannot find the element name in the ACCESSIBILITY TREE, you MUST emit scroll_v or retry. Emitting a click with invented coordinates is a critical failure.
+
+! DONE VERIFICATION:
+Before emitting "done", confirm ALL of the following:
+- The active window title matches or contains the expected application from the task.
+- The screenshot visually confirms the task outcome.
+If either check fails, do NOT emit done — instead navigate toward the correct state.
+
+TASKBAR MULTI-WINDOW PICKER:
+When clicking a taskbar element that has multiple running windows, Windows shows
+a thumbnail picker overlay. The active window will briefly appear empty and the
+tree will have very few elements. This is expected — do NOT replan or get stuck.
+
+You must click one of the thumbnail elements visible in the tree to focus a window.
+Do NOT press Escape — it does nothing here. Do NOT invent coordinates.
+
+Most cases the orchestrator will click the primary window for you, check if it has before proceeding with the step.
+
+If the orchestrator has failed to handle it for you, then
+  Look for thumbnail or button elements in the accessibility tree and click the most
+  relevant one, typically named after the main application window.
+
+If the tree is empty during this state, emit scroll_v at the center of the screen
+to prompt a tree refresh, then retry.
+
+! For the new tab page of the browser, the provided search box in the page is never good enough to complete the task.
+The one on the browser itself is always the best one to do anything you want to.
+
+! Only Replan if needed
+
+- OMNIBOX SANITATION: Before executing a 'type' action into the "Edge address bar":
+  1. The system assumes Ctrl+L has highlighted existing text.
+  2. If the screenshot shows the previous URL is still visible and not highlighted, 
+     emit {"action": "press_hotkey", "keys": ["ctrl", "a"]} followed by 
+     {"action": "press_key", "key": "backspace"} to ensure a clean slate.
+  3. This prevents malformed URLs (e.g., 'youtube.comhttps://').
+
+- SUBMISSION CONFIRMATION: Because 'type' handles the 'Enter' key, your 
+  verification logic must change. After a 'type' action, if the window title 
+  does not change within 1-2 seconds, do NOT click 'Refresh'. Instead, 
+  emit a 'retry' to re-focus the input field and re-type.
+
+- SEARCH FIELD PRIORITY: When typing into a site-specific search box (like YouTube), 
+  ensure the 'type' action targets the center of the element to trigger 
+  the site's internal submission logic.
+
+- REPLAN LIMIT: If a 'type' action fails to navigate three times, do not 
+  replan the same 'type' instruction. Instead, attempt to use a keyboard 
+  shortcut (like '/' for YouTube search or 'Ctrl+L' for browser search) 
+  to reset the focus.
 """
   
   def construct_user_prompt(self, task, instruction, expected_result, active_window, ui_tree, taskbar):
