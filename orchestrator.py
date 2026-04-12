@@ -4,11 +4,10 @@ import time
 import models.planner_model
 
 MAX_ITERATIONS_PER_STEP = 5
-ACTION_SETTLE_TIME = 2
-
-# Punishment Settings, punishments arent dealt right now. Maybe a thing in the future.
 MAX_PUNISHMENT_SCORE = 500
 PUNISHMENT_MODIFIER = 50
+ACTION_SETTLE_TIME = 2
+MAX_REPLAN_LOOP = 3
 
 def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
   task = steps['task']
@@ -18,7 +17,7 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
   step_count = 0
   hard_exit = False
 
-  while step_count < len(step_list)*2:
+  while True:
     if hard_exit:
       break
 
@@ -36,6 +35,7 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
     print(f"[STEP_ORCHESTRATOR] Step Location: {step_count+1}/{len(step_list)}")
 
     additional_context = None
+    replan_history = []
     
     for iterations in range(1, MAX_ITERATIONS_PER_STEP):
       if iterations == MAX_ITERATIONS_PER_STEP:
@@ -52,6 +52,7 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
       if action_result == "PROCEED":
         step_count = step_count + 1
         additional_context = None
+        replan_history = []
         break
 
       elif action_result == "STUCK":
@@ -67,6 +68,12 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
         next_action = step_result.get('next', '')
         print(f"[STEP_ORCHESTRATOR] Replan requested, overriding instruction.")
         additional_context = f"Ignore the original step instruction. Execute this single atomic action only: {next_action}"
+        replan_history.append(next_action)
+
+        if len(replan_history) >= MAX_REPLAN_LOOP and len(set(replan_history[-MAX_REPLAN_LOOP:])) == 1:
+          print(f"[STEP_ORCHESTRATOR] Replan loop detected, forcing STUCK")
+          hard_exit = True
+          break
       
       elif action_result == "RETRY":
         print(f"[STEP_ORCHESTRATOR] The actor model or action parser is requesting a retry, retrying with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
@@ -80,6 +87,6 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
   
 perform_steps(
   # steps=models.planner_model.make_plan("Open a Taarak Metha ka OOltah Chasmah Video on YouTube"),
-  steps=models.planner_model.make_plan("Search horses on Google"),
+  steps=models.planner_model.make_plan("Open Steam and Start Counter Strike 2"),
   action_settle_time=1
 )
