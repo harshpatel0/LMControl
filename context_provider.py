@@ -18,9 +18,9 @@ class ContextProvider:
     "RadioButton", "Slider", "ToolBar", "SearchBox", "Text"
   }
 
-  seen = set()
   
   def _get_elements_from_window(self, window):
+    seen = set()
     elements = []
     
     try:

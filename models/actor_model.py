@@ -8,7 +8,7 @@ ACTOR_MODEL_NAME = "gemma4:e4b"
 OLLAMA_SERVER = "http://192.168.68.254:11434"
 
 context = ContextProvider()
-actor_model = ActorModel(ACTOR_MODEL_NAME, OLLAMA_SERVER, keep_alive=10)
+actor_model = ActorModel(ACTOR_MODEL_NAME, OLLAMA_SERVER, keep_alive=-1)
 
 def do_step(step, task, additional_context=None, punishment_tally=None):
     active_window = context.get_active_window()
