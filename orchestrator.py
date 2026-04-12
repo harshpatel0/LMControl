@@ -1,9 +1,9 @@
 import models.actor_model as actor_model
-from actor.parse_action import parse_action
+from parse_action import parse_action
 import time
 import models.planner_model
 from context_provider import ContextProvider
-from actor.perform_pc_actions import PCActions
+from pc_actions.perform_pc_actions import PCActions
 import pyautogui
 
 pc_actions = PCActions()

@@ -460,8 +460,8 @@ The one on the browser itself is always the best one to do anything you want to.
 - OMNIBOX SANITATION: Before executing a 'type' action into the "Edge address bar":
   1. The system assumes Ctrl+L has highlighted existing text.
   2. If the screenshot shows the previous URL is still visible and not highlighted, 
-     emit {"action": "press_hotkey", "keys": ["ctrl", "a"]} followed by 
-     {"action": "press_key", "key": "backspace"} to ensure a clean slate.
+    emit {"action": "press_hotkey", "keys": ["ctrl", "a"]} followed by 
+    {"action": "press_key", "key": "backspace"} to ensure a clean slate.
   3. This prevents malformed URLs (e.g., 'youtube.comhttps://').
 
 - SUBMISSION CONFIRMATION: Because 'type' handles the 'Enter' key, your 

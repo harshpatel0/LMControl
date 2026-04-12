@@ -1,4 +1,4 @@
-from actor.perform_pc_actions import PCActions
+from pc_actions.perform_pc_actions import PCActions
 
 pc = PCActions(failsafe=True)
 
