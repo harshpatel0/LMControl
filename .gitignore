@@ -2,3 +2,7 @@ __pycache__/
 .continue/ 
 # Experimenting with Local AI Autocomplete Models
 .env
+
+# WIP and Proposed Features that are not ready to ship
+modules/
+skills/
