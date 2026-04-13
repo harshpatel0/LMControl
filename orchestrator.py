@@ -125,11 +125,11 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
         raise Exception(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
 
 if __name__ == "__main__":
-  plan = models.planner_model.make_plan("Run a python code that prints out Hello World on the terminal")
+  plan = models.planner_model.make_plan("Open a Taarak Metha ka Ooltah Chasmah Video on YouTube")
   printed_plan = json.dumps(plan, indent=2)
   print(printed_plan)
   perform_steps(
     steps=plan,
-    action_settle_time=1,
+    action_settle_time=4,
     skills=plan.get("_actor_skills")
   )

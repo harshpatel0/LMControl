@@ -1,32 +1,45 @@
 # Python Engine — Planner Guide
 
-Strategic Usage
-Prefer the run_python action over manual UI exploration for:
+## Action Format
 
-Validation: Checking if a task was successful (e.g., "Verify the file was saved").
+```
+python | code=<semicolon-separated statements>
+```
 
-System State: Checking active processes, volume levels, or battery status.
+All dependencies are auto-installed. Code runs in an isolated venv.
 
-Data Handling: Formatting text, calculating values, or parsing strings.
+## When to Use
 
-## Step Sequencing
+Use `python` instead of UI steps for:
 
-When using Python for validation, follow the Action-Verify flow:
+- File operations (create, move, delete, check existence)
+- Process launching or system state queries
+- Data transformation, calculations, string formatting
+- Anything faster or more reliable done in code than via the UI
 
-Step N: Perform the UI action (e.g., "Save the document").
+Do NOT use for anything the actor can do directly via the accessibility tree.
 
-Step N+1: Use run_python to verify the state (e.g., "Run script to check if file.docx exists in /Documents").
+## Rules
 
-Instruction Clarity
-Your instructions for Python steps must include the logic required:
+- One script per step. Keep code self-contained.
+- Write the actual code in the instruction — never describe what it should do.
+- Chain statements with semicolons on a single line.
+- `expected_result` must describe a verifiable system state, not script output.
+- Every Python step needs a UI-based fallback.
 
-Bad: "Run a python script."
+## Examples
 
-Good: "python | code=import os; print(os.path.exists('path/to/file'))"
+**Correct instruction:**
+`python | code=import subprocess; subprocess.Popen(['notepad.exe'])`
 
-## Expected Results
+**Correct expected_result:**
+`Notepad is open and visible as the active window`
 
-The expected_result for a Python step should define the successful output of the script (e.g., "The script returns True" or "The process list includes 'vlc.exe'").
+**Correct fallback:**
+`Press Win+S, type Notepad, press Enter`
 
-! Python action is internally defined, meaning you can be rest assured it exists. Do not worry about it not being assigned to an action. The above example will still work. Python functionality is hard coded into the app, just the instructions are split up.
-Always prioritise the use of skills!
+**Wrong instruction:**
+`Run a python script to open Notepad`
+
+**Wrong expected_result:**
+`The script returns True`

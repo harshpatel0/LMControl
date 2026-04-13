@@ -1,57 +1,76 @@
----
-name: browser-navigation-actor
-description: Use when executing browser navigation steps, typing URLs, or interacting with web search boxes in Microsoft Edge and Google Chrome
----
-
 # Browser Navigation — Actor Guide
 
 ## Address Bar
 
-The Edge address bar / Google Chrome Omnibox is only reachable after Ctrl+L. Never type a URL without
-a preceding Ctrl+L step having been executed. After Ctrl+L the address bar will
-be focused and ready — emit the type action immediately.
+Always use Ctrl+L to focus the address bar before typing a URL.
+After Ctrl+L the bar is focused — emit the type action immediately.
+
+Before typing, check the screenshot: if the previous URL is still visible and
+not highlighted, emit ctrl+a then backspace to clear it. This prevents malformed
+URLs like "youtube.comhttps://".
 
 ## New Tab Search Box
 
-The Edge new tab page contains a Bing search box. This is never a valid target.
-The Google new tab page contains a Google search box. This is never a valid
-target.
-for URL navigation. Always use the address bar via Ctrl+L.
+The new tab page contains a search box (Bing, Google, etc). This is never a
+valid target for URL navigation or task-related searches. Always use the address
+bar via Ctrl+L. This is a trap element — do not click it.
 
 ## Site Search Boxes
 
-When a step instructs you to type into a site-specific search box (e.g. Google
-search box, YouTube search box), locate that element in the ACCESSIBILITY TREE
-by name before acting. The address bar is never a substitute.
+When a step targets a site-specific search box (e.g. YouTube search box, Google
+search box), locate it in the ACCESSIBILITY TREE by name before acting.
+The address bar is never a substitute for a page-level search field.
 
 If the search element is not in the tree:
-
 - Use the fallback from the step
 - Do not fall back to the address bar on your own
-- Emit scroll_v to bring the element into view if the page is loaded but the
-  element is not visible
+- Emit scroll_v to bring it into view if the page is loaded but element is not visible
+- Try keyboard shortcuts (e.g. "/" for YouTube, GitHub) to focus the search box
+
+## Ambiguous Search Target
+
+If the step says "type into the search bar" and both the address bar and a
+page-level search box are visible, default to the address bar unless navigation
+to a specific site is already confirmed complete.
 
 ## Wrong Page Recovery
 
-If the active window is Edge but the wrong page is loaded:
-
+If the active window is a browser but the wrong page is loaded:
 1. press_hotkey ctrl+l
-2. type the correct URL into the address bar
+2. type the correct URL
 3. press_key enter
 
-Never declare stuck because you are on the wrong page within Edge.
+Never declare stuck because you are on the wrong page within the browser.
 
 ## Tab Safety
 
-Before typing a URL into the address bar, check if the active tab contains
-content unrelated to the current task. If it does, press Ctrl+T first.
+Before typing a URL, check if the active tab contains content unrelated to the
+current task. If it does, emit press_hotkey ctrl+t to open a new tab first.
+
+## Search Result Recovery
+
+If a click on a search result does not change the page title:
+- Do NOT click the same coordinate again
+- Try a different part of the result (e.g. thumbnail instead of text link)
+- If the tree shows only one element, emit scroll_v to find a traditional results list
+
+## Type Submission
+
+The type action submits automatically. After a type action, if the page title
+does not change within a couple of seconds, emit retry to re-focus and retype.
+Do NOT click Refresh.
+
+## Type Failures
+
+If a type action fails to navigate three consecutive times, do not keep replanning
+the same instruction. Instead try a keyboard shortcut to reset focus:
+- "/" for YouTube or GitHub search
+- Ctrl+L for browser address bar
 
 ## open_url Action
 
-For tasks that require navigating directly to a URL, prefer the open_url action
-over manual keystroke navigation:
-
+For navigating to a URL, prefer the open_url skill action over manual keystrokes:
 {"action": "open_url", "url": "https://example.com"}
 
-This is faster and more reliable than the manual Ctrl+T → Ctrl+L → type → Enter
-sequence. Only fall back to manual navigation if open_url is unavailable.
+This opens the default browser directly. Only fall back to manual navigation
+(Ctrl+T → Ctrl+L → type → Enter) if open_url is unavailable.
