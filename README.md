@@ -20,3 +20,32 @@ LMControl allows an LLM to perform actions on your PC using Local Models. (Windo
 You can also configure the model you want to use in `actor_model.py` and `planner_model.py`.
 
 It will get better.
+
+## Features
+
+### Skills!
+
+Skills allow you to extend LMControl's capabilities through direct Python Functions, and Markdown Files detailing their usage.
+
+Skills allow the actor and the planner to learn how to do a specific task, without crowding the system prompt. Selectively learning what it needs to be able to complete the task.
+
+#### How to install a skill
+
+1. Drag and Drop the Folder into /skills
+
+#### How to Create a skill
+
+1. Add a `skill.json` file to define settings for the Skills Orchestrator to use
+2. Define documentation for the `actor` and the `planner` on what to do with this skill
+3. Optional: Add a entry file that allows the agent to run a Python function
+
+#### `skills.json` schema
+
+``` json
+{
+  "name": "browser-navigation",
+  "description": "Use when interacting with a browser",
+  "actions": ["open_url"],
+  "entry": "skill.py"
+}
+```
