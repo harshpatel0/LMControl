@@ -4,6 +4,7 @@ import sys
 import os
 import tempfile
 import venv
+import json
 
 VENV_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".lmcontrol_venv")
 
@@ -69,7 +70,41 @@ class PythonRunner:
       }
     
     return None
+  
+  def run_skill_by_path(self, entry_path, args=None):
+    with open(entry_path, 'r') as file:
+      skill_code = file.read()
+    
+    imports, error = self._extract_imports(skill_code)
+    if error:
+      return {"result": "SYNTAX_ERROR", "stderr": error, "stdout": ""}
+    
+    install_error = self._install_packages(imports)
+    if install_error:
+      return install_error
+  
+    cmd = [self.venv_python, entry_path]
 
+    if args:
+      cmd.append(json.dumps(args))
+
+    try:
+      result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+
+      output = result.stdout.strip()
+      errors = result.stderr.strip()
+
+      if errors:
+        return {"result": "ERRORS", "stderr": errors, "stdout": output}
+      
+      return {"result": "SUCCESS", "stderr": "", "stdout": output}
+    
+    except subprocess.TimeoutExpired:
+      return {"result": "TIMEOUT", "stderr": "Skill timed out", "stdout": ""}
+    
+    except Exception as e:
+      return {"result": "PY_EXCEPTION", "stderr": str(e), "stdout": ""}
+    
   def run(self, code, timeout=15):
     # Step 1 - parse imports
     imports, error = self._extract_imports(code)
@@ -119,7 +154,7 @@ class PythonRunner:
     except Exception as e:
       return {
         "result": "PY_EXCEPTION",
-        "stderr": e,
+        "stderr": str(e),
         "stdout": output
       }
     

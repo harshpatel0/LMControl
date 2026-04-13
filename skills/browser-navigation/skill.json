@@ -1,0 +1,6 @@
+{
+  "name": "browser-navigation",
+  "description": "Use when interacting with a browser",
+  "actions": ["open_url"],
+  "entry": "skill.py"
+}

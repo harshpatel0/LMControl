@@ -13,12 +13,13 @@ planner_model = PlannerModel(model_name=MODEL_NAME, ollama_server=OLLAMA_SERVER,
 context = ContextProvider()
 context.get_installed_apps()
 
-def make_plan(task: str) -> dict:
-  response = planner_model.run(task=task)
-  print(response)
+class PlannerModel:
+  def make_plan(task: str) -> dict:
+    response = planner_model.run(task=task)
+    print(response)
 
-  response = utils.strip_markdown_json(response)
-  return json.loads(response)
+    response = utils.strip_markdown_json(response)
+    return json.loads(response)
 
 if __name__ == "__main__":
   plan = make_plan("Open a Taarak Metha ka Ooltah Chasmah Video on YouTube")

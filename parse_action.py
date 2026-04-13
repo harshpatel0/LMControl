@@ -1,10 +1,17 @@
 from pc_actions.perform_pc_actions import PCActions
+from skills.skill_orchestrator import can_handle, execute as execute_skill
 
 pc = PCActions(failsafe=True)
 
 def parse_action(action):
   return_command = "PROCEED"
 
+  if can_handle(action.get("action")):
+    result = execute_skill(action)
+    print(f"[SkillOrchestrator] {result}")
+    return "PROCEED"
+  
+  # The rest of PC Actions
   match action["action"]:
     case "click":
       print(f"DEBUG: Clicking at X={action['x']}, Y={action['y']} on element={action.get('element')}")
