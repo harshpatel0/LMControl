@@ -94,6 +94,9 @@ class PythonRunner:
       output = result.stdout.strip()
       errors = result.stderr.strip()
 
+      print(f"Output: {output}")
+      print(f"Errors: {errors}")
+
       if errors:
         return {"result": "ERRORS", "stderr": errors, "stdout": output}
       
@@ -106,6 +109,7 @@ class PythonRunner:
       return {"result": "PY_EXCEPTION", "stderr": str(e), "stdout": ""}
     
   def run(self, code, timeout=15):
+    print(f"Running Python code\n{code}")
     # Step 1 - parse imports
     imports, error = self._extract_imports(code)
     if error:
@@ -130,6 +134,9 @@ class PythonRunner:
       )
       output = result.stdout.strip()
       errors = result.stderr.strip()
+
+      print(f"Output: {output}")
+      print(f"Errors: {errors}")
 
       if errors:
         print(f"[PythonRunner] stderr: {errors}\nstdout: {output}")

@@ -5,6 +5,9 @@ skill_orchestrator = skills.skill_orchestrator.Skills()
 
 pc = PCActions(failsafe=True)
 
+import python.run_python_code
+pyrun = python.run_python_code.PythonRunner()
+
 def parse_action(action):
   return_command = "PROCEED"
 
@@ -50,6 +53,9 @@ def parse_action(action):
         position_x=action["x"],
         position_y=action["y"]
       )
+    
+    case "python":
+      pyrun.run(action['code'])
 
     case "done":
       return_command = "DONE"

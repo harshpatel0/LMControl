@@ -1,0 +1,7 @@
+{
+  "name": "python",
+  "description": "Run any Python code, the runner will install all dependencies for you and run your code in a separate process",
+  "enabled": false,
+  "actions": [""],
+  "entry": ""
+}

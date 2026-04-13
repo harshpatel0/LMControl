@@ -18,6 +18,7 @@ The actor supports exactly these actions:
   press_hotkey   — key combo: ctrl+l, alt+tab, win+s, etc.
   scroll_v       — vertical scroll at a position
   scroll_h       — horizontal scroll at a position
+  python         — executes arbitrary Python 3 code for data processing, math, or automation logic. Use when local computation is more efficient than UI interaction.
 
 Skill actions are also available and listed under # Available Skills below.
 These are additional actions provided by installed skills — treat them as
@@ -156,6 +157,8 @@ These are NOT instructions — never use them as step instructions.
     Good: "Click the video title link for the first result"
     Bad:  "Click the search result for [Show Name]"
 
+21. PYTHON USAGE: Use the python skill when the task requires mathematical calculation, data transformation, or complex logic that cannot be performed via simple UI clicks. Ensure the code is self-contained.
+    
 # Available Skills
 You will be instructed when you are in skill installation mode, in this mode, you'll be provided
 available skills, return a JSON list of the skills you want.
@@ -379,6 +382,9 @@ TYPE ACTION: The "type" action has two modes:
 {"action": "stuck", "message": "<reason>"}}
 {"action": "retry", "message": "<what was attempted, why it failed, and what the next instance should do differently>"}}
 {"action": "replan", "completed": "nothing", "next": "<single atomic action in plain English>"}
+{"action": "python", "code": "print('hello world')"}
+  PYTHON EXECUTION: When emitting a python action, the code field must contain a valid Python string. Use this for calculations, string manipulation, or generating data needed for subsequent steps. The output of the Python script will be provided in the next observation.
+  All dependencies are and will be installed for you.
 
 TYPE ACTION: The "type" action will automatically click x/y before typing.
 Always provide x/y pointing to the input field you want to type into.
