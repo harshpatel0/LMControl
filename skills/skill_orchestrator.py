@@ -20,24 +20,35 @@ class Skills:
   def get_skill_doc(self, skill, consumer):
     """Gets the skill document for either `consumer`: planner | actor"""
 
-    if skill not in self.installed_skills:
-      return {"result": "NOT_FOUND"}
-    
-    consumer = consumer.lower()
+    if not self.has_skill(skill):
+      print(f"[SkillOrchestrator] Skill '{skill}' not found")
+      return None
 
-    with open(f"/skills/{skill}/{consumer}_skill.md", encoding='utf-8') as skill_file:
-      skill_doc_content = skill_file.read()
-    
-    return skill_doc_content
+    consumer = consumer.lower()
+    filename = f"{consumer}_skill.md"
+    skill_path = self._skills[skill]["path"]
+    doc_path = os.path.join(skill_path, filename)
+
+    if not os.path.exists(doc_path):
+      print(f"[SkillOrchestrator] No {filename} found for skill '{skill}'")
+      return None
+
+    with open(doc_path, encoding='utf-8') as skill_file:
+      return skill_file.read()
 
   def load_all_requested_skills(self, skills, consumer):
     """Loads all requested skills for a particular consumer"""
     loaded_skills = []
     for skill in skills:
+      print(f"[SKILL_ORCHESTRATOR] Installing Skill {skill}")
       skill_content = self.get_skill_doc(skill, consumer)
-      loaded_skills.append(skill_content)
-    
-    return "\n\n".join(loaded_skills)
+      
+      if skill_content is None:
+          continue
+      
+      loaded_skills.append(f"## Skill: {skill}\n{skill_content}")
+
+    return "\n\n".join(loaded_skills) if loaded_skills else None
 
 
   def _discover(self):

@@ -1,13 +1,15 @@
 from pc_actions.perform_pc_actions import PCActions
-from skills.skill_orchestrator import can_handle, execute as execute_skill
+import skills.skill_orchestrator
+
+skill_orchestrator = skills.skill_orchestrator.Skills()
 
 pc = PCActions(failsafe=True)
 
 def parse_action(action):
   return_command = "PROCEED"
 
-  if can_handle(action.get("action")):
-    result = execute_skill(action)
+  if skill_orchestrator.can_handle(action.get("action")):
+    result = skill_orchestrator.execute(action)
     print(f"[SkillOrchestrator] {result}")
     return "PROCEED"
   

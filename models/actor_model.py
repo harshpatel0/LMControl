@@ -10,7 +10,7 @@ OLLAMA_SERVER = "http://192.168.68.254:11434"
 context = ContextProvider()
 actor_model = ActorModel(ACTOR_MODEL_NAME, OLLAMA_SERVER, keep_alive=-1)
 
-def do_step(step, task, additional_context=None, punishment_tally=None):
+def do_step(step, task, additional_context=None, punishment_tally=None, skills=None):
     active_window = context.get_active_window()
     taskbar = context.get_taskbar_elements()
     ui_tree = context.get_ui_tree(active_window)
@@ -34,7 +34,7 @@ def do_step(step, task, additional_context=None, punishment_tally=None):
     if punishment_tally:
         user_prompt = actor_model.return_prompt_with_additional_context(user_prompt, punishment_tally, "Here are the number of iterations you have made on this task")
     
-    response = actor_model.run(user_prompt, attach_screenshot=True)
+    response = actor_model.run(user_prompt, attach_screenshot=True, skills=skills)
 
     action = json.loads(utils.strip_markdown_json(response).strip())
 

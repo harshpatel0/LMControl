@@ -12,7 +12,7 @@ combined or skipped:
 
 1. Press Ctrl+T        — opens a new tab
 2. Press Ctrl+L        — focuses the address bar  
-3. Type [full URL] into the Edge address bar
+3. Type [full URL] into the address bar
 4. Press Enter
 
 ## New Tab Behaviour
@@ -37,7 +37,7 @@ before the page is confirmed open.
 
 Every type step must name the specific UI element:
 
-- URL navigation: "Type [url] into the Edge address bar"
+- URL navigation: "Type [url] into the address bar"
 - Site search: "Type [query] into the [site name] search box"
 
 Never use generic names like "search bar" or "address bar" without the site context.
@@ -62,3 +62,9 @@ step whose expected_result confirms that page is loaded.
 
 The skill allows you to open the default web browser on the PC pointing to a specific url.
 The actor has the ability to use this skill and use it, unless the manual method fails.
+
+## Assumptions
+
+Never assume the user is an Edge user, you will be wrong about 86 percent of the time.
+You don't need to care what browser it is unless you need to do it manually.
+open_url skill OPENS THE DEFAULT BROWSER!

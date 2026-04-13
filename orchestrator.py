@@ -4,7 +4,7 @@ import time
 import models.planner_model
 from context_provider import ContextProvider
 from pc_actions.perform_pc_actions import PCActions
-import pyautogui
+import json
 
 pc_actions = PCActions()
 
@@ -15,7 +15,7 @@ MAX_AUTONOMY_STEPS = 10
 ACTION_SETTLE_TIME = 2
 MAX_REPLAN_LOOP = 7 
 
-def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
+def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
   task = steps['task']
   step_list = steps['steps']
 
@@ -50,7 +50,7 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
       
       window_before = context_provider.get_active_window()
 
-      step_result = actor_model.do_step(step, task, additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step")
+      step_result = actor_model.do_step(step, task, additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step", skills=skills)
       action_result = parse_action(step_result)
 
       print(f"[STEP_ORCHESTRATOR] Action Result: {action_result}")
@@ -125,7 +125,11 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME):
         raise Exception(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
 
 if __name__ == "__main__":
+  plan = models.planner_model.make_plan("I want to watch Taarak Metha ka Ooltah Chasmah on YouTube")
+  printed_plan = json.dumps(plan, indent=2)
+  print(printed_plan)
   perform_steps(
-      steps=models.planner_model.make_plan("I want to watch Taarak Metha ka Ooltah Chasmah on YouTube"),
-      action_settle_time=1
+    steps=models.planner_model.make_plan("I want to watch Taarak Metha ka Ooltah Chasmah on YouTube"),
+    action_settle_time=1,
+    skills=plan.get("_actor_skills")
   )
