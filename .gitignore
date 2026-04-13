@@ -5,6 +5,7 @@ __pycache__/
 
 # Runtime stuff
 .lmcontrol_venv
+dev/
 
 # WIP and Proposed Features that are not ready to ship
 modules/
