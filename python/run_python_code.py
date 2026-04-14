@@ -73,63 +73,29 @@ class PythonRunner:
     
     return None
   
-  def run_skill_by_path(self, entry_path, args=None):
-    with open(entry_path, 'r') as file:
-      skill_code = file.read()
-    
-    imports, error = self._extract_imports(skill_code)
-    if error:
-      return {"result": "SYNTAX_ERROR", "stderr": error, "stdout": ""}
-    
-    install_error = self._install_packages(imports)
-    if install_error:
-      return install_error
-  
-    cmd = [self.venv_python, entry_path]
-
-    if args:
-      cmd.append(json.dumps(args))
-
-    try:
-      result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
-
-      output = result.stdout.strip()
-      errors = result.stderr.strip()
-
-      print(f"Output: {output}")
-      print(f"Errors: {errors}")
-
-      if errors:
-        return {"result": "ERRORS", "stderr": errors, "stdout": output}
-      
-      return {"result": "SUCCESS", "stderr": "", "stdout": output}
-    
-    except subprocess.TimeoutExpired:
-      return {"result": "TIMEOUT", "stderr": "Skill timed out", "stdout": ""}
-    
-    except Exception as e:
-      return {"result": "PY_EXCEPTION", "stderr": str(e), "stdout": ""}
-    
-  def run(self, code, timeout=15):
-    print(f"Running Python code\n{code}")
-    # Step 1 - parse imports
+  def prepare_environment(self, code):
     imports, error = self._extract_imports(code)
     if error:
-      return f"{error}"
-
-    # Step 2 - install missing packages
+      return {
+        "result": "IMPORT_DISCOVERY_ERROR",
+        "stderr": error,
+        "stdout": ""
+      }
+    
     install_error = self._install_packages(imports)
     if install_error:
-      return f"{install_error}"
+      return {
+        "result": "PACKAGE_INSTALL_ERROR",
+        "stderr": install_error,
+        "stdout": ""
+      }
 
-    # Step 3 - write to temp file and run
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-      f.write(code)
-      temp_path = f.name
-
+    return None
+  
+  def execute_code(self, command, timeout=15):
     try:
       result = subprocess.run(
-        [self.venv_python, temp_path],
+        command,
         capture_output=True,
         text=True,
         timeout=timeout
@@ -137,12 +103,12 @@ class PythonRunner:
       output = result.stdout.strip()
       errors = result.stderr.strip()
 
-      print(f"Output: {output}")
-      print(f"Errors: {errors}")
+      logger.info(f"Output: {output}")
+      logger.warning(f"Errors: {errors}")
 
       if errors:
         logger.warning(f"stderr: {errors}\nstdout: {output}")
-        result = "ERRORS"
+        result = "ERROR"
       else:
         result = "SUCCESS"
       logger.info("Code ran successfully with no output.")
@@ -166,9 +132,41 @@ class PythonRunner:
         "stderr": str(e),
         "stdout": output
       }
+
+  def run_skill_by_path(self, entry_path, args=None):
+    with open(entry_path, 'r') as file:
+      skill_code = file.read()
     
-    finally:
-      os.unlink(temp_path)
+    preparation_result = self.prepare_environment(skill_code)
+
+    if preparation_result:
+      return preparation_result
+  
+    cmd = [self.venv_python, entry_path]
+
+    if args:
+      cmd.append(json.dumps(args))
+
+    execution_result = self.execute_code(cmd)
+    return execution_result
+    
+  def run(self, code, timeout=15):
+    print(f"Running Python code\n{code}")
+    preparation_result = self.prepare_environment(code=code)
+
+    if preparation_result:
+      return preparation_result
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+      f.write(code)
+      temp_path = f.name
+    
+    command = [self.venv_python, temp_path]
+
+    execution_result = self.execute_code(command=command)
+    os.unlink(temp_path)
+
+    return execution_result
 
 if __name__ == "__main__":
   pyrun = PythonRunner()

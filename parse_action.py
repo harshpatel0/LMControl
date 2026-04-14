@@ -15,7 +15,7 @@ def parse_action(action):
   if skill_orchestrator.can_handle(action.get("action")):
     result = skill_orchestrator.execute(action)
     logger.debug(f"[SkillOrchestrator] {result}")
-    return "PROCEED" 
+    return result
   
   # The rest of PC Actions
   match action["action"]:
@@ -56,7 +56,8 @@ def parse_action(action):
       )
     
     case "python":
-      pyrun.run(action['code'])
+      result = pyrun.run(action['code'])
+      return result
 
     case "done":
       return_command = "DONE"

@@ -52,6 +52,8 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
       window_before = context_provider.get_active_window()
 
       step_result = actor_model.do_step(step, task, additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step", skills=skills)
+      additional_context = None
+
       action_result = parse_action(step_result)
 
       logger.debug(f"Action Result: {action_result}")
@@ -63,7 +65,6 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
         action_type = step_result.get('action', '')
         element = step_result.get('element')
 
-        additional_context = None
 
         if not window_after or window_after.strip() == "":
           logger.warning("PROCEED signal but active window is empty, handling thumbnail...")
@@ -118,6 +119,51 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
           additional_context = f"{step_result['message']}"
         except Exception:
           additional_context = "The Action Parser was not able to parse your action. Be more careful with the format in this run."
+
+      elif isinstance(action_result, dict):
+        action_result_type = action_result.result
+        action_result_stderr = action_result.get('stderr')
+        action_result_stdout = action_result.get('stdout')
+
+        if action_result_type == "IMPORT_DISCOVERY_ERROR":
+          additional_context = f"The modules in the code/skill could not be discovered, and so cannot be run without errors\nHere are the errors returned: {action_result_stderr}"
+          continue
+        
+        elif action_result_type == "PACKAGE_INSTALL_ERROR":
+          additional_context = f"The modules in the code/skill could not be installed, and so the code/skill cannot be run without errors\nHere are the errors returned: {action_result_stderr}"
+          continue
+        
+        elif action_result_type == "TIMEOUT":
+          additional_context = f"""
+The code/skill took too long to run and was killed prematurely. Here are the logs of its output.
+
+## Output
+{action_result_stdout}
+
+## Errors
+{action_result_stderr}
+"""
+      elif action_result_type == "PY_EXCEPTION":
+        additional_context = f"The subprocess running your code/skill produced an exception\n{action_result_stderr}"
+        continue
+      
+      elif action_result_type == "ERROR":
+        additional_context = f"The code/skill ran with errors\n{action_result_stderr}"
+        continue
+      
+      elif action_result_type == "SUCCESS":
+        additional_context = f"""
+The code/skill ran successfully, here are the logs of the Output and Error Stream
+
+## Output
+{action_result_stdout}
+
+## Errors
+{action_result_stderr}
+"""
+        step_count += 1
+        replan_history = []
+        continue
 
       else:
         logger.error(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
