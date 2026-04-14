@@ -3,10 +3,10 @@
 ## Skill
 
 open_url opens the default browser to a URL in one step. Always prefer it over
-manual navigation. Never assume the browser is Edge — open_url handles this.
+manual navigation. Never assume the browser is Edge — open_url handles this by opening the default browser, or invoking a picker to choose which browser to use, just use any actual browser, if something like a text editor or mail client shows up, don't click it.
 
   CORRECT:  "open_url | url=https://www.youtube.com"
-  FALLBACK: "Press Ctrl+T, press Ctrl+L, type the URL, press Enter"
+  FALLBACK: "Open Browser, Press Ctrl+T, press Ctrl+L, type the URL, press Enter"
 
 ## URL Navigation (manual fallback only)
 
@@ -64,3 +64,24 @@ whose expected_result confirms that page is loaded.
 - Address bar: "Press Ctrl+L to focus the address bar"
 - Site search: "Press / to focus the [site] search bar" (where supported)
 - Never fall back to the address bar for a page-level search field
+
+## Completing the Action
+Lead the user to the resource directly, scenerios
+
+If it is a YouTube Video
+- Lead them directly to it
+
+If it is a section of a webpage
+- Lead them directly to it
+
+If it is a specific item in a shop
+- Lead them directly to it
+
+Filling out forms
+- Fill them out as per what the user says, or any browser autofills if you find one
+
+Searching the page
+- Search on the webpage's search box, can't find it? Must be inside a menu or a search icon visible.
+
+Searching the internet
+- Use the Address Bar / Omnibox of the page. If you have reached the relevant website to complete a task, you'll not need to touch the browsers address bar

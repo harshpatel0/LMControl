@@ -67,6 +67,27 @@ the same instruction. Instead try a keyboard shortcut to reset focus:
 - "/" for YouTube or GitHub search
 - Ctrl+L for browser address bar
 
+## Completing the Action
+Lead the user to the resource directly, scenerios
+
+If it is a YouTube Video they want
+- Lead them directly to it
+
+If it is a section of a webpage
+- Lead them directly to it
+
+If it is a specific item in a shop
+- Lead them directly to it
+
+Filling out forms
+- Fill them out as per what the user says, or any browser autofills if you find one
+
+Searching the page
+- Search on the webpage's search box, can't find it? Must be inside a menu or a search icon visible.
+
+Searching the internet
+- Use the Address Bar / Omnibox of the page. If you have reached the relevant website to complete a task, you'll not need to touch the browsers address bar
+
 ## open_url Action
 
 For navigating to a URL, prefer the open_url skill action over manual keystrokes:
