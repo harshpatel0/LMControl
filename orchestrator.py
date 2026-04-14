@@ -5,6 +5,7 @@ import models.planner_model
 from context_provider import ContextProvider
 from pc_actions.perform_pc_actions import PCActions
 import json
+from utils.logger import logger
 
 pc_actions = PCActions()
 
@@ -27,9 +28,9 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
 
     if in_autonomy:
       if step_count >= len(step_list) + MAX_AUTONOMY_STEPS:
-        print("[STEP_ORCHESTRATOR] Autonomy budget exhausted, exiting.")
+        logger.critical("Autonomy budget exhausted, exiting.")
         break
-      print("[STEP_ORCHESTRATOR > AUTONOMY MODE] Running in Basic Autonomy Mode")
+      logger.info("[Step Orchestrator > Basic Autonomy Mode] Running in Basic Autonomy Mode")
       step = {
         "instruction": "Autonomy Mode — the planned steps are complete but the task may not be done. Continue independently and call done when finished. Your hand is not going to be held in this mode, so just complete the task how you think you can.",
         "expected_result": "The original task is fully complete."
@@ -37,7 +38,7 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
     else:
       step = step_list[step_count]
 
-    print(f"[STEP_ORCHESTRATOR] Step Location: {step_count+1}/{len(step_list)}")
+    logger.info(f"Step Location: {step_count+1}/{len(step_list)}")
 
     additional_context = None
     replan_history = []
@@ -53,7 +54,7 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
       step_result = actor_model.do_step(step, task, additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step", skills=skills)
       action_result = parse_action(step_result)
 
-      print(f"[STEP_ORCHESTRATOR] Action Result: {action_result}")
+      logger.debug(f"Action Result: {action_result}")
 
       time.sleep(action_settle_time)
 
@@ -65,28 +66,25 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
         additional_context = None
 
         if not window_after or window_after.strip() == "":
-          print("[STEP_ORCHESTRATOR] PROCEED but active window is empty, handling thumbnail...")
+          logger.warning("PROCEED signal but active window is empty, handling thumbnail...")
           pc_actions.dismiss_taskbar_thumbnail_overlay()
           time.sleep(2)
           additional_context = "The previous click opened a thumbnail picker. I've tried to dismiss it. Please check the state now."
           continue
 
-        if element and element not in window_after:
-          print(f"[STEP_ORCHESTRATOR] Element '{element}' not in title '{window_after}', retrying...")
-          # continue
-          pass
+        # if action_type in ('click') and window_before == window_after:
+        #   logger.warning("PROCEED signal but window unchanged, downgrading to RETRY")
+        #   additional_context = f"You clicked '{step_result.get('element', 'unknown')}' but the window did not change. The element may be wrong or the click had no effect. Try a different element or action."
+        #   continue
 
-        if action_type in ('click', 'double_click') and window_before == window_after:
-          print("[STEP_ORCHESTRATOR] PROCEED but window unchanged, downgrading to RETRY")
-          additional_context = f"You clicked '{step_result.get('element', 'unknown')}' but the window did not change. The element may be wrong or the click had no effect. Try a different element or action."
-          continue
+        # This keeps punishing the model for something it is not really responsible for, looking for other ways to handle this.
 
         step_count += 1
         replan_history = []
         break
 
       elif action_result == "STUCK":
-        print(f"[STEP_ORCHESTRATOR] The Actor Model claims it is stuck, running another iteration with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
+        logger.info(f"The Actor Model claims it is stuck, running another iteration with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
         additional_context = f"{step_result['message']}"
 
       elif action_result == "DONE":
@@ -94,20 +92,20 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
         action_type = step_result.get('action', '')
         element = step_result.get('element', '')
 
-        if not element in window_after:
-          print("[STEP_ORCHESTRATOR] Could not find the element requested in the Window Title, assuming it is not done unless the actor flags done again, Forcing a retry")
-          continue
-        else:
-          print("[STEP_ORCHESTRATOR] The actor model claims the task is done, hard exiting...")
-          hard_exit = True
-          break
+        # if not element in window_after:
+        #   print("[STEP_ORCHESTRATOR] Could not find the element requested in the Window Title, assuming it is not done unless the actor flags done again, Forcing a retry")
+        #   continue
+        
+        logger.info("The actor model claims the task is done, hard exiting...")
+        hard_exit = True
+        break
 
       elif action_result == "REPLAN":
         next_action = step_result.get('next', '')
         replan_history.append(next_action)
 
         if len(replan_history) >= MAX_REPLAN_LOOP and len(set(replan_history[-MAX_REPLAN_LOOP:])) == 1:
-          print(f"[STEP_ORCHESTRATOR] Replan loop detected ({MAX_REPLAN_LOOP} identical replans), forcing exit.")
+          logger.critical(f"Replan loop detected ({MAX_REPLAN_LOOP} identical replans), forcing exit.")
           hard_exit = True
           break
 
@@ -115,13 +113,14 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
         additional_context = f"Ignore the original step instruction. Execute this single atomic action only: {next_action}"
 
       elif action_result == "RETRY":
-        print(f"[STEP_ORCHESTRATOR] Retrying with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
+        logger.warning(f"[STEP_ORCHESTRATOR] Retrying with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
         try:
           additional_context = f"{step_result['message']}"
         except Exception:
           additional_context = "The Action Parser was not able to parse your action. Be more careful with the format in this run."
 
       else:
+        logger.error(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
         raise Exception(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 from pc_actions.perform_pc_actions import PCActions
 import skills.skill_orchestrator
+from utils.logger import logger
 
 skill_orchestrator = skills.skill_orchestrator.Skills()
 
@@ -13,13 +14,13 @@ def parse_action(action):
 
   if skill_orchestrator.can_handle(action.get("action")):
     result = skill_orchestrator.execute(action)
-    print(f"[SkillOrchestrator] {result}")
-    return "PROCEED"
+    logger.debug(f"[SkillOrchestrator] {result}")
+    return "PROCEED" 
   
   # The rest of PC Actions
   match action["action"]:
     case "click":
-      print(f"DEBUG: Clicking at X={action['x']}, Y={action['y']} on element={action.get('element')}")
+      logger.debug(f"Clicking at X={action['x']}, Y={action['y']} on element={action.get('element')}")
 
       try:
         pc.click(

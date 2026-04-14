@@ -9,6 +9,7 @@ PROJECT_ROOT = os.path.dirname(SKILLS_DIR)
 VENV_PYTHON = os.path.join(PROJECT_ROOT, ".lmcontrol_venv", "Scripts", "python.exe")
 
 from python.run_python_code import PythonRunner
+from utils.logger import logger
 
 class Skills:
   _dispatch = {}
@@ -21,7 +22,7 @@ class Skills:
     """Gets the skill document for either `consumer`: planner | actor"""
 
     if not self.has_skill(skill):
-      print(f"[SkillOrchestrator] Skill '{skill}' not found")
+      logger.warning(f"Skill '{skill}' not found")
       return None
 
     consumer = consumer.lower()
@@ -30,7 +31,7 @@ class Skills:
     doc_path = os.path.join(skill_path, filename)
 
     if not os.path.exists(doc_path):
-      print(f"[SkillOrchestrator] No {filename} found for skill '{skill}'")
+      logger.warning(f"No {filename} found for skill '{skill}'")
       return None
 
     with open(doc_path, encoding='utf-8') as skill_file:
@@ -40,7 +41,7 @@ class Skills:
     """Loads all requested skills for a particular consumer"""
     loaded_skills = []
     for skill in skills:
-      print(f"[SKILL_ORCHESTRATOR] Installing Skill {skill}")
+      logger.info(f"Installing Skill {skill}")
       skill_content = self.get_skill_doc(skill, consumer)
       
       if skill_content is None:
@@ -81,7 +82,7 @@ class Skills:
           entry = os.path.join(skill_path, definition["entry"])
 
           if not os.path.exists(entry):
-            print(f"[SkillOrchestrator] Warning: entry '{entry}' not found for skill '{skill_folder}', skipping executable.")
+            logger.warning(f"Warning: entry '{entry}' not found for skill '{skill_folder}', skipping executable.")
           else:
             skill_entry["executable"] = True
             skill_entry["actions"] = definition.get("actions", [])
@@ -89,10 +90,10 @@ class Skills:
 
             for action in definition.get("actions", []):
               self._dispatch[action] = entry
-              print(f"[SkillOrchestrator] Registered action '{action}' → {skill_folder}")
+              logger.debug(f"Registered action '{action}' to {skill_folder}")
 
         except Exception as e:
-          print(f"[SkillOrchestrator] Failed to load skill.json for '{skill_folder}': {e}")
+          logger.error(f"Failed to load skill.json for '{skill_folder}': {e}")
 
       self._skills[skill_folder] = skill_entry
 
@@ -126,7 +127,7 @@ class Skills:
     entry = self._dispatch.get(action_name)
     
     if not entry:
-      return f"[SkillOrchestrator] No skill registered for action '{action_name}'"
+      return f"[Skill Orchestrator] No skill registered for action '{action_name}'"
     
     # Pass everything except 'action' key as args
     args = {k: v for k, v in action.items() if k != "action"}

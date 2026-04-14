@@ -8,6 +8,8 @@ import json
 
 VENV_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".lmcontrol_venv")
 
+from utils.logger import logger
+
 class PythonRunner:
 
   def __init__(self):
@@ -25,9 +27,9 @@ class PythonRunner:
 
   def _ensure_venv(self):
     if not os.path.exists(self.venv_python):
-      print(f"[PythonRunner] Creating venv at {self.venv_dir}...")
+      logger.info(f"Creating venv at {self.venv_dir}...")
       venv.create(self.venv_dir, with_pip=True)
-      print(f"[PythonRunner] Venv created.")
+      print(f"Venv created.")
 
   def _extract_imports(self, code):
     """Returns a list of top-level module names imported by the code."""
@@ -55,7 +57,7 @@ class PythonRunner:
     if not to_install:
       return None
     
-    print(f"[PythonRunner] Installing: {to_install}")
+    logger.info(f"Installing: {to_install}")
     result = subprocess.run(
       [self.venv_python, "-m", "pip", "install", *to_install],
       capture_output=True,
@@ -113,12 +115,12 @@ class PythonRunner:
     # Step 1 - parse imports
     imports, error = self._extract_imports(code)
     if error:
-      return f"[PythonRunner] {error}"
+      return f"{error}"
 
     # Step 2 - install missing packages
     install_error = self._install_packages(imports)
     if install_error:
-      return f"[PythonRunner] {install_error}"
+      return f"{install_error}"
 
     # Step 3 - write to temp file and run
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -139,11 +141,11 @@ class PythonRunner:
       print(f"Errors: {errors}")
 
       if errors:
-        print(f"[PythonRunner] stderr: {errors}\nstdout: {output}")
+        logger.warning(f"stderr: {errors}\nstdout: {output}")
         result = "ERRORS"
       else:
         result = "SUCCESS"
-      print("[PythonRunner] Code ran successfully with no output.")
+      logger.info("Code ran successfully with no output.")
 
       return {
         "result": result,

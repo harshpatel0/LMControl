@@ -6,6 +6,7 @@ import pyautogui
 import io
 import base64
 import pywinauto
+from utils.logger import logger
 
 class ContextProvider:
   installed_apps = []
@@ -114,7 +115,7 @@ class ContextProvider:
         screenshot = pyautogui.screenshot(region=(left, top, width, height))
 
     except Exception as e:
-        print(f"[ContextProvider] Window screenshot failed ({e}), falling back to full screen.")
+        logger.warning(f"[ContextProvider] Window screenshot failed ({e}), falling back to full screen.")
         screenshot = pyautogui.screenshot()
 
     buffer = io.BytesIO()
