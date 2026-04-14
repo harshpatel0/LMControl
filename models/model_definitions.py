@@ -7,6 +7,7 @@ import ollama
 import json
 
 from utils.strings import Strings
+from utils.logger import logger
 
 skill_orchestrator = Skills()
 
@@ -125,7 +126,7 @@ Current Taskbar Setup Accessibility Tree
     system_prompt = self.system_prompt
 
     if skills:
-      print("[MODEL ORCHESTRATOR] Installing Skills into System Prompt")
+      logger.info("[MODEL ORCHESTRATOR] Installing Skills into System Prompt")
       system_prompt = system_prompt + f"""
 ## Installed Skills
 The following skills have been installed and their actions are available to you.
@@ -147,7 +148,7 @@ Treat skill actions as first-class actions alongside the standard ones above.
       format = self.output_format
     )
 
-    print(f"Thinking: {response.message.thinking}") 
+    logger.info(f"Thinking: {response.message.thinking}") 
     response = response.message.content.strip()
     return response
 
@@ -229,12 +230,12 @@ Taskbar Elements
     )
 
     if hasattr(response.message, 'thinking') and response.message.thinking:
-      print(f"Thinking: {response.message.thinking}")
+      logger.info(f"Thinking: {response.message.thinking}")
 
     response = response.message.content.strip()
 
     if not response:
-      print("[Internal Guard] The model returned nothing, simulating a retry call from the step orchestrator")
+      logger.warning("[Internal Guard] The model returned nothing, simulating a retry call from the step orchestrator")
       response = """{
 "action": "retry",
 "message": "Model returned an empty response, likely due to context overload. Retry with the same step."}

@@ -1,5 +1,7 @@
 import pyautogui
 import time
+from utils.logger import logger
+
 class PCActions:
   def __init__(self, failsafe=True):
     pyautogui.FAILSAFE = failsafe
@@ -27,8 +29,7 @@ class PCActions:
     pyautogui.hotkey(*hotkey)
 
   def dismiss_taskbar_thumbnail_overlay(self):
-    print("DEBUG: Inside dismiss_taskbar function now!") # Add this
-    print("[PERFORM PC ACTIONS INTERNAL FUNCTION] Hopefully dismissing the popup")
+    logger.debug("[PERFORM PC ACTIONS INTERNAL FUNCTION] Hopefully dismissing the popup")
     x_position, y_position = pyautogui.position()
     click_x_position = x_position - 70
     click_y_position = y_position - 96

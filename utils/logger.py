@@ -3,8 +3,8 @@ import sys
 
 def setup_shared_logger(name, log_file="lmcontrol.log"):
   formatter = logging.Formatter(
-      fmt='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
-      datefmt='%d-%m-%Y %H:%M:%S'
+    fmt='%(asctime)s - %(levelname)s - %(module)s - %(message)s',
+    datefmt='%d-%m-%Y %H:%M:%S'
   )
 
   console_handler = logging.StreamHandler(sys.stdout)

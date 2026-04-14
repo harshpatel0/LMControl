@@ -2,7 +2,7 @@ import json
 from models.model_definitions import ActorModel
 from context_provider import ContextProvider
 import utils.utils as utils
-from utils.hijack import print
+from utils.logger import logger
 
 ACTOR_MODEL_NAME = "gemma4:e4b"
 OLLAMA_SERVER = "http://192.168.68.254:11434"
@@ -19,8 +19,8 @@ def do_step(step, task, additional_context=None, punishment_tally=None, skills=N
         short_title = active_window.split(" - ")[-1].strip()
         ui_tree = context.get_ui_tree(short_title)
 
-    print(f"Active window: {active_window}")
-    print(f"UI elements found: {len(ui_tree.splitlines())}")
+    logger.debug(f"Active window: {active_window}")
+    logger.debug(f"UI elements found: {len(ui_tree.splitlines())}")
 
     instruction = step['instruction']
     expected_result = step['expected_result']
@@ -42,7 +42,7 @@ def do_step(step, task, additional_context=None, punishment_tally=None, skills=N
         action = {
             "action": "retry",
             "message": "Model returned an empty response, likely due to context overload. Retry with the same step."}
-        print("[INTERNAL ACTOR MODEL GUARD] The model returned an empty response, instructing the Step Orchestrator to retry")
+        logger.warning("[INTERNAL ACTOR MODEL GUARD] The model returned an empty response, instructing the Step Orchestrator to retry")
     
-    print(action)
+    logger.debug(action)
     return action

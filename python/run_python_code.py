@@ -29,7 +29,7 @@ class PythonRunner:
     if not os.path.exists(self.venv_python):
       logger.info(f"Creating venv at {self.venv_dir}...")
       venv.create(self.venv_dir, with_pip=True)
-      print(f"Venv created.")
+      logger.info(f"Virtual Environment created.")
 
   def _extract_imports(self, code):
     """Returns a list of top-level module names imported by the code."""
@@ -151,7 +151,7 @@ class PythonRunner:
     return execution_result
     
   def run(self, code, timeout=15):
-    print(f"Running Python code\n{code}")
+    logger.info(f"Running Python code\n{code}")
     preparation_result = self.prepare_environment(code=code)
 
     if preparation_result:

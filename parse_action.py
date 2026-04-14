@@ -72,7 +72,7 @@ def parse_action(action):
       return_command = "REPLAN"
 
     case _:
-      print(f"Unknown action: {action['action']}")
+      logger.warning(f"Unknown action: {action['action']}")
       return_command = "RETRY"
 
   return return_command

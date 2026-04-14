@@ -121,9 +121,13 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
           additional_context = "The Action Parser was not able to parse your action. Be more careful with the format in this run."
 
       elif isinstance(action_result, dict):
-        action_result_type = action_result.result
+        logger.debug(action_result)
+        print(action_result)
+        action_result_type = action_result.get('result')
         action_result_stderr = action_result.get('stderr')
         action_result_stdout = action_result.get('stdout')
+
+        logger.info(f"Action Result Type: {action_result_type}\nAction Result stderr: {action_result_stderr}\nAction Result stdout: {action_result_stdout}")
 
         if action_result_type == "IMPORT_DISCOVERY_ERROR":
           additional_context = f"The modules in the code/skill could not be discovered, and so cannot be run without errors\nHere are the errors returned: {action_result_stderr}"

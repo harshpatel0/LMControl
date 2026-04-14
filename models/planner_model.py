@@ -6,6 +6,7 @@ from context_provider import ContextProvider
 from models.model_definitions import PlannerModel
 from skills.skill_orchestrator import Skills
 import utils.utils as utils
+from utils.logger import logger
 
 MODEL_NAME = "gemma4:e4b"
 OLLAMA_SERVER = "http://192.168.68.254:11434/"
@@ -21,11 +22,11 @@ context.get_installed_apps()
 def make_plan(task: str) -> dict:
   planner_skills, actor_skills = planner_model.skill_installation_mode(task)
 
-  print(f"[PlannerModel] Planner skills loaded: {planner_skills is not None}")
-  print(f"[PlannerModel] Actor skills loaded: {actor_skills is not None}")
+  logger.info(f"[PlannerModel] Planner skills loaded: {planner_skills is not None}")
+  logger.info(f"[PlannerModel] Actor skills loaded: {actor_skills is not None}")
 
   response = planner_model.run(task=task, skills=planner_skills)
-  print(response)
+  logger.info(response)
 
   response = utils.strip_markdown_json(response)
   plan = json.loads(response)
