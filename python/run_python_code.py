@@ -39,6 +39,9 @@ class PythonRunner:
       return None, f"Syntax error in code: {e}"
     
     imports = set()
+    imports.add("setuptools")
+    imports.add("wheel")
+    
     for node in ast.walk(tree):
       if isinstance(node, ast.Import):
         for alias in node.names:

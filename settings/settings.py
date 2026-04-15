@@ -50,8 +50,3 @@ class Settings:
         setattr(obj, key, value)
 
 settings = Settings("settings.json")
-
-print(settings.models)
-print(settings.orchestrator)
-print(settings.models.ollama_server)
-

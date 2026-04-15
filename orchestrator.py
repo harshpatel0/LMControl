@@ -151,16 +151,17 @@ The code/skill took too long to run and was killed prematurely. Here are the log
 ## Errors
 {action_result_stderr}
 """
-      elif action_result_type == "PY_EXCEPTION":
-        additional_context = f"The subprocess running your code/skill produced an exception\n{action_result_stderr}"
-        continue
       
-      elif action_result_type == "ERROR":
-        additional_context = f"The code/skill ran with errors\n{action_result_stderr}"
-        continue
-      
-      elif action_result_type == "SUCCESS":
-        additional_context = f"""
+        elif action_result_type == "PY_EXCEPTION":
+          additional_context = f"The subprocess running your code/skill produced an exception\n{action_result_stderr}"
+          continue
+        
+        elif action_result_type == "ERROR":
+          additional_context = f"The code/skill ran with errors\n{action_result_stderr}"
+          continue
+        
+        elif action_result_type == "SUCCESS":
+          additional_context = f"""
 The code/skill ran successfully, here are the logs of the Output and Error Stream
 
 ## Output
@@ -169,13 +170,13 @@ The code/skill ran successfully, here are the logs of the Output and Error Strea
 ## Errors
 {action_result_stderr}
 """
-        step_count += 1
-        replan_history = []
-        continue
+          step_count += 1
+          replan_history = []
+          continue
 
-      else:
-        logger.error(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
-        raise Exception(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
+        else:
+          logger.error(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
+          raise Exception(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
 
 if __name__ == "__main__":
   plan = models.planner_model.make_plan("Send a toast message saying Hello World!")
