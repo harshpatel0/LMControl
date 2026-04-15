@@ -6,7 +6,11 @@ import pyautogui
 import io
 import base64
 import pywinauto
+import win32gui
 from utils.logger import logger
+import time
+
+WAITING_PERIOD = 4
 
 class ContextProvider:
   installed_apps = []
@@ -23,6 +27,11 @@ class ContextProvider:
   def _get_elements_from_window(self, window):
     seen = set()
     elements = []
+
+    progress = None
+    last_progress = 0
+
+    times_progress_has_been_same = 0
     
     try:
       win_rect = window.rectangle()
@@ -31,40 +40,55 @@ class ContextProvider:
     except:
       win_left, win_top, win_right, win_bottom = 0, 0, self.screen_width, self.screen_height
 
-    for el in window.descendants():
-      try:
-        ctrl_type = el.element_info.control_type
+    while progress != last_progress and times_progress_has_been_same != WAITING_PERIOD:
+      last_progress = progress
+      time.sleep(0.25) # Waiting for other apps to render new stuff
 
-        if ctrl_type not in self.ALLOWED_CONTROL_TYPES:
+      for el in window.descendants():
+        logger.debug(f"Last Progress: {last_progress} and Current Progresss {progress}")
+        try:
+          ctrl_type = el.element_info.control_type
+
+          if ctrl_type not in self.ALLOWED_CONTROL_TYPES:
+            continue
+
+          element_name = el.window_text().strip()
+
+          if not element_name or len(element_name) > 100 or element_name == '':
+            continue
+
+          if ctrl_type == "Text" and len(element_name) <= 1:
+            continue
+
+          rect = el.rectangle()
+          if rect.width() == 0 or rect.height() == 0:
+            continue
+
+          # Drop elements outside the window bounds
+          target_x = int(rect.left + rect.width() / 2)
+          target_y = int(rect.top + rect.height() / 2)
+
+          if not (win_left <= target_x <= win_right and win_top <= target_y <= win_bottom):
+            # Checks if it is inside the window.
+            continue
+
+          key = (ctrl_type, element_name, target_x, target_y)
+          if key in seen:
+            continue
+          seen.add(key)
+
+          elements.append(f"{ctrl_type} | name='{element_name}' | x={target_x} y={target_y}")
+        except:
           continue
+        
+      progress = len(seen) + len(elements)
+      if progress == last_progress:
+        times_progress_has_been_same = times_progress_has_been_same + 1
+      else:
+        times_progress_has_been_same = 0
 
-        element_name = el.window_text().strip()
-
-        if not element_name or len(element_name) > 100 or element_name == '':
-          continue
-
-        if ctrl_type == "Text" and len(element_name) <= 1:
-          continue
-
-        rect = el.rectangle()
-        if rect.width() == 0 or rect.height() == 0:
-          continue
-
-        # Drop elements outside the window bounds
-        target_x = int(rect.left + rect.width() / 2)
-        target_y = int(rect.top + rect.height() / 2)
-
-        if not (win_left <= target_x <= win_right and win_top <= target_y <= win_bottom):
-          continue
-
-        key = (ctrl_type, element_name, target_x, target_y)
-        if key in seen:
-          continue
-        seen.add(key)
-
-        elements.append(f"{ctrl_type} | name='{element_name}' | x={target_x} y={target_y}")
-      except:
-        continue
+      logger.debug(f"Scan Pass Complete, found {len(elements)} for Model")
+      logger.debug(elements)
 
     return elements
 
@@ -96,13 +120,13 @@ class ContextProvider:
     """
     try:
         if window_title is None:
-            win = gw.getActiveWindow()
+          win = gw.getActiveWindow()
         else:
-            wins = gw.getWindowsWithTitle(window_title)
-            win = wins[0] if wins else gw.getActiveWindow()
+          wins = gw.getWindowsWithTitle(window_title)
+          win = wins[0] if wins else gw.getActiveWindow()
 
         if win is None:
-            raise ValueError("No window found")
+          raise ValueError("No window found")
 
         left   = max(win.left, 0)
         top    = max(win.top, 0)
@@ -110,7 +134,7 @@ class ContextProvider:
         height = win.height
 
         if width <= 0 or height <= 0:
-            raise ValueError("Window has zero size")
+          raise ValueError("Window has zero size")
 
         screenshot = pyautogui.screenshot(region=(left, top, width, height))
 
@@ -131,15 +155,26 @@ class ContextProvider:
     except Exception as e:
       return f"Could not read taskbar: {str(e)}"
 
-  def get_ui_tree(self, window_title: str):
+  def get_ui_tree(self, window_title):
     try:
-      app = pywinauto.Application(backend="uia").connect(title_re=f".*{window_title}.*", timeout=5)
-      elements = self._get_elements_from_window(app.top_window())
+      hwnd = win32gui.GetForegroundWindow()
+      desktop = pywinauto.Desktop(backend="uia")
+
+      window = desktop.window(handle=hwnd)
+      elements = self._get_elements_from_window(window)
+
+      logger.debug(elements)
       return "\n".join(elements) if elements else "No UI elements found."
     except Exception as e:
       return f"Could not read UI tree: {str(e)}"
     
 
 if __name__ == "__main__":
+  import keyboard
+
   cp = ContextProvider()
-  print(cp.get_ui_tree(cp.get_active_window()))
+  while True:
+    if keyboard.is_pressed('k'):
+      logger.info(cp.get_ui_tree(cp.get_active_window()))
+    if keyboard.is_pressed('q'):
+      quit()
