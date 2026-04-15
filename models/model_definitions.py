@@ -34,6 +34,9 @@ class PlannerModel():
   
   def skill_installation_mode(self, task):
     skill_mode_system_prompt = self.system_prompt
+
+    # Ignoring thinking here, the model is capable enough to install the correct skill on its own, thinking will just slow it down for no real benefit
+
     skill_mode_system_prompt = skill_mode_system_prompt + f"""
 # Skill Installation Mode
 
@@ -99,7 +102,12 @@ Current Taskbar Setup Accessibility Tree
 # Task (What the user wants to do)
 > {task}
     """
-    system_prompt = self.system_prompt
+    system_prompt = ""
+
+    if settings.models.planner.thinking:
+      system_prompt = system_prompt + "<|think|>"
+
+    system_prompt = system_prompt + self.system_prompt
 
     if skills:
       logger.info("[MODEL ORCHESTRATOR] Installing Skills into System Prompt")
@@ -187,6 +195,11 @@ Taskbar Elements
     if attach_screenshot:
       user_message["images"] = [context_provider.get_screenshot(window_title=context_provider.get_active_window())]
 
+    system_prompt = ""
+
+    if settings.models.actor.thinking:
+      system_prompt = system_prompt + "<|think|>"
+      
     system_prompt = self.build_system_prompt_with_skills(skills)
 
     response = self.client.chat(

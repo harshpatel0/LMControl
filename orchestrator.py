@@ -49,8 +49,6 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
           print("[STEP_ORCHESTRATOR] Cutting my losses while I can, quitting.")
           hard_exit = True
           break
-      
-      window_before = context_provider.get_active_window()
 
       step_result = actor_model.do_step(step, task, additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step", skills=skills)
       additional_context = None
@@ -179,7 +177,7 @@ The code/skill ran successfully, here are the logs of the Output and Error Strea
           raise Exception(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
 
 if __name__ == "__main__":
-  plan = models.planner_model.make_plan("Send a toast message saying Hello World!")
+  plan = models.planner_model.make_plan("Put an episode of Taarak Metha Ka Ooltah Chasmah on YouTube")
   printed_plan = json.dumps(plan, indent=2)
   print(printed_plan)
   perform_steps(
