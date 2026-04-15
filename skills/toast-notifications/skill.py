@@ -1,11 +1,11 @@
-from win10toast import ToastNotifier
+from winotify import Notification
+
 import sys
 import json
 
-toaster = ToastNotifier()
-
-def show_toast(title, body, duration=4):
-  toaster.show_toast(title, body, duration=duration)
+def show_toast(title, body):
+  toast = Notification(app_id = "LMControl Toast Notifier Skill", title=title, msg=body)
+  toast.show()
 
 if __name__ == "__main__":
   # Args passed as JSON via environment or stdin
