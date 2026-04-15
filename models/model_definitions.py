@@ -57,19 +57,6 @@ Here is how to request an install
 Some skills also have actions associated with them, as also discussed prior, these actions are treated the same as the other actor's capabilities you saw for the model.
 Remember, the skills you install are also installed for the actor.
 """
-    
-    SKILL_SELECTION_SYSTEM_PROMPT = """
-You are the Skill Selector for a Windows 11 Automation System.
-Your only job is to analyze a task and select which skills are needed before planning begins.
-
-You will be given a task and a list of available skills.
-Return ONLY a valid JSON array of skill name strings.
-Return an empty array if no skills are needed.
-Do not explain your choices. Do not return anything other than the JSON array.
-
-Example response: ["browser-navigation"]
-Example response for no skills needed: []
-"""
     # Maybe a watered down skill selection system prompt can make things better. For next trial
     skills_mode_user_prompt = f"Commence skill installation mode. Return a list of skills to install as per required output scheme that you might need to complete this task: {task}"
 
@@ -77,7 +64,7 @@ Example response for no skills needed: []
       model=self.model_name,
       messages=[
         {"role": "system", "content": skill_mode_system_prompt},
-        {"role": "user", "content": SKILL_SELECTION_SYSTEM_PROMPT}
+        {"role": "user", "content": skills_mode_user_prompt}
       ],
       options={
         "temperature": 0.1

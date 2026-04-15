@@ -3,7 +3,7 @@
 ## Action Format
 
 ```
-python | code=<semicolon-separated statements>
+instruction: python | code=<< code string here>>
 ```
 
 All dependencies are auto-installed. Code runs in an isolated venv.
