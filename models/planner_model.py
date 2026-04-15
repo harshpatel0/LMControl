@@ -13,13 +13,13 @@ OLLAMA_SERVER = "http://192.168.68.254:11434/"
 MODEL_TEMPERATURE = 0.7
 KEEP_ALIVE = 0
 
-planner_model = PlannerModel(model_name=MODEL_NAME, ollama_server=OLLAMA_SERVER, model_temperature=MODEL_TEMPERATURE, keep_alive=KEEP_ALIVE)
+planner_model = PlannerModel()
 skill_orchestrator = Skills()
 
 context = ContextProvider()
 context.get_installed_apps()
 
-def make_plan(task: str) -> dict:
+def make_plan(task: str):
   planner_skills, actor_skills = planner_model.skill_installation_mode(task)
 
   logger.info(f"[PlannerModel] Planner skills loaded: {planner_skills is not None}")

@@ -9,8 +9,7 @@ import pywinauto
 import win32gui
 from utils.logger import logger
 import time
-
-WAITING_PERIOD = 4
+from settings.settings import settings
 
 class ContextProvider:
   installed_apps = []
@@ -23,73 +22,73 @@ class ContextProvider:
     "RadioButton", "Slider", "ToolBar", "SearchBox", "Text"
   }
 
-  
   def _get_elements_from_window(self, window):
+    last_count = 0
+    stable_ticks = 0
+    WAITING_PERIOD = settings.context_provider.waiting_period
+
+    while stable_ticks < WAITING_PERIOD:
+      try:
+        current_count = len(window.descendants()) 
+      except:
+        current_count = 0
+
+      if current_count > 0 and current_count == last_count:
+        stable_ticks += 1
+      else:
+        stable_ticks = 0
+        last_count = current_count
+      
+      if stable_ticks < WAITING_PERIOD:
+        time.sleep(0.25)
+
+    logger.info(f"UI Stabilized with {last_count} elements. Extracting data...")
+
     seen = set()
     elements = []
-
-    progress = None
-    last_progress = 0
-
-    times_progress_has_been_same = 0
     
     try:
       win_rect = window.rectangle()
-      win_left, win_top = win_rect.left, win_rect.top
-      win_right, win_bottom = win_rect.right, win_rect.bottom
+      bounds = (win_rect.left, win_rect.top, win_rect.right, win_rect.bottom)
     except:
-      win_left, win_top, win_right, win_bottom = 0, 0, self.screen_width, self.screen_height
+      bounds = (0, 0, self.screen_width, self.screen_height)
 
-    while progress != last_progress and times_progress_has_been_same != WAITING_PERIOD:
-      last_progress = progress
-      time.sleep(0.25) # Waiting for other apps to render new stuff
+    win_left, win_top, win_right, win_bottom = bounds
 
-      for el in window.descendants():
-        logger.debug(f"Last Progress: {last_progress} and Current Progresss {progress}")
-        try:
-          ctrl_type = el.element_info.control_type
-
-          if ctrl_type not in self.ALLOWED_CONTROL_TYPES:
-            continue
-
-          element_name = el.window_text().strip()
-
-          if not element_name or len(element_name) > 100 or element_name == '':
-            continue
-
-          if ctrl_type == "Text" and len(element_name) <= 1:
-            continue
-
-          rect = el.rectangle()
-          if rect.width() == 0 or rect.height() == 0:
-            continue
-
-          # Drop elements outside the window bounds
-          target_x = int(rect.left + rect.width() / 2)
-          target_y = int(rect.top + rect.height() / 2)
-
-          if not (win_left <= target_x <= win_right and win_top <= target_y <= win_bottom):
-            # Checks if it is inside the window.
-            continue
-
-          key = (ctrl_type, element_name, target_x, target_y)
-          if key in seen:
-            continue
-          seen.add(key)
-
-          elements.append(f"{ctrl_type} | name='{element_name}' | x={target_x} y={target_y}")
-        except:
+    # Single pass extraction
+    for el in window.descendants():
+      try:
+        ctrl_type = el.element_info.control_type
+        if ctrl_type not in self.ALLOWED_CONTROL_TYPES:
           continue
-        
-      progress = len(seen) + len(elements)
-      if progress == last_progress:
-        times_progress_has_been_same = times_progress_has_been_same + 1
-      else:
-        times_progress_has_been_same = 0
 
-      logger.debug(f"Scan Pass Complete, found {len(elements)} for Model")
-      logger.debug(elements)
+        # Check Rectangle (Fast)
+        rect = el.rectangle()
+        if rect.width() == 0 or rect.height() == 0:
+          continue
 
+        target_x = int(rect.left + rect.width() / 2)
+        target_y = int(rect.top + rect.height() / 2)
+
+        if not (win_left <= target_x <= win_right and win_top <= target_y <= win_bottom):
+          continue
+
+        # Check Text (SLOW - requires querying the other process)
+        element_name = el.window_text().strip()
+        if not element_name or len(element_name) > 100:
+          continue
+
+        if ctrl_type == "Text" and len(element_name) <= 1:
+          continue
+
+        key = (ctrl_type, element_name, target_x, target_y)
+        if key not in seen:
+          seen.add(key)
+          elements.append(f"{ctrl_type} | name='{element_name}' | x={target_x} y={target_y}")
+      except:
+        continue
+
+    logger.debug(f"Final scan found {len(elements)} elements.")
     return elements
 
   def get_active_window(self):
@@ -155,7 +154,7 @@ class ContextProvider:
     except Exception as e:
       return f"Could not read taskbar: {str(e)}"
 
-  def get_ui_tree(self, window_title):
+  def get_ui_tree(self):
     try:
       hwnd = win32gui.GetForegroundWindow()
       desktop = pywinauto.Desktop(backend="uia")

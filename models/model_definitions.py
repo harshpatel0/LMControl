@@ -9,37 +9,26 @@ import json
 from utils.strings import Strings
 from utils.logger import logger
 
+from settings.settings import settings
+
 skill_orchestrator = Skills()
 
-class Model:
-  output_format = "json"
-  keep_alive = 0
-  ollama_server = ""
+OUTPUT_FORMAT = "json"
 
-  model_temperature = 0.1
-  model_name = ""
+PLANNER_KEEP_ALIVE = 0
+ACTOR_KEEP_ALIVE = -1
 
-  context_provider = ContextProvider()
+context_provider = ContextProvider()
 
-  def __init__(self, ollama_server, model_name, model_temperature=0.1, output_format="json", keep_alive = 0):
-    self.output_format = output_format
-    self.ollama_server = ollama_server
-    self.keep_alive = keep_alive
-
-    self.model_temperature = model_temperature
-    self.model_name = model_name
-
-class PlannerModel(Model):
+class PlannerModel():
   system_prompt = Strings.PLANNER_BASE_SYSTEM_PROMPT
 
-  def __init__(self, model_name, ollama_server, model_temperature=0.1, output_format = 'json', keep_alive = 0):
-    super().__init__(
-      ollama_server=ollama_server, 
-      output_format=output_format, 
-      keep_alive=keep_alive,
-      model_name=model_name,
-      model_temperature=model_temperature
-    )
+  def __init__(self):
+    self.ollama_server=settings.models.ollama_server
+    self.output_format=OUTPUT_FORMAT
+    self.keep_alive=PLANNER_KEEP_ALIVE
+    self.model_name=settings.models.planner.model_name
+    self.model_temperature=settings.models.planner.temperature
     
     self.client = ollama.Client(host=self.ollama_server)
   
@@ -88,7 +77,7 @@ Example response for no skills needed: []
       model=self.model_name,
       messages=[
         {"role": "system", "content": skill_mode_system_prompt},
-        {"role": "user", "content": skills_mode_user_prompt}
+        {"role": "user", "content": SKILL_SELECTION_SYSTEM_PROMPT}
       ],
       options={
         "temperature": 0.1
@@ -101,7 +90,7 @@ Example response for no skills needed: []
     skills = json.loads(skills)
     skills = skills.get("skills", [])
 
-    installable_skills = [s for s in skills if skill_orchestrator.has_skill(s)]
+    installable_skills = [skill for skill in skills if skill_orchestrator.has_skill(skill)]
 
     planner_skills = skill_orchestrator.load_all_requested_skills(installable_skills, 'planner')
     actor_skills = skill_orchestrator.load_all_requested_skills(installable_skills, 'actor')
@@ -111,14 +100,14 @@ Example response for no skills needed: []
   def run(self, task, skills=None):
     user_prompt = f"""
 # PC Environment
-OS: {self.context_provider.WINDOWS_VERSION}
-Screen: {self.context_provider.screen_width}x{self.context_provider.screen_height}
-Pinned Taskbar Apps: {self.context_provider.get_pinned_apps()}
-Installed Apps: {self.context_provider.installed_apps}
-Active Window: "{self.context_provider.get_active_window()}"
+OS: {context_provider.WINDOWS_VERSION}
+Screen: {context_provider.screen_width}x{context_provider.screen_height}
+Pinned Taskbar Apps: {context_provider.get_pinned_apps()}
+Installed Apps: {context_provider.installed_apps}
+Active Window: "{context_provider.get_active_window()}"
 
 Current Taskbar Setup Accessibility Tree
-{self.context_provider.get_taskbar_elements()}
+{context_provider.get_taskbar_elements()}
 
 # Task (What the user wants to do)
 > {task}
@@ -152,7 +141,7 @@ Treat skill actions as first-class actions alongside the standard ones above.
     response = response.message.content.strip()
     return response
 
-class ActorModel(Model):
+class ActorModel():
   system_prompt = Strings.ACTOR_BASE_SYSTEM_PROMPT
 
   def build_system_prompt_with_skills(self, skills=None):
@@ -166,7 +155,7 @@ Treat skill actions as first-class actions alongside the standard ones above.
 {skills}
 """
 
-  def construct_user_prompt(self, task, instruction, expected_result, active_window, ui_tree, taskbar):
+  def construct_user_prompt(self, task, instruction, expected_result):
     user_prompt = f"""
 # Step Context
 Current Task: {task}
@@ -174,16 +163,16 @@ Current Step: {instruction}
 Success Condition: {expected_result}
 
 # App Context
-Active Window: {active_window}
+Active Window: {context_provider.get_active_window()}
 
 Accessibility Tree
 ControlType, name, x, y
-{ui_tree}
+{context_provider.get_ui_tree()}
 
 # System Context
-TASKBAR (located at the bottom of the screen, y ≈ {self.context_provider.screen_height - 20}): 
+TASKBAR (located at the bottom of the screen, y ≈ {context_provider.screen_height - 20}): 
 Taskbar Elements
-{taskbar}
+{context_provider.get_taskbar_elements()}
 
 # Additional Context is provided below (if the orchestrator has anything to say)
 """
@@ -193,16 +182,13 @@ Taskbar Elements
     user_prompt = user_prompt + f"\n{accompanying_message}\n{additional_context}"
     return user_prompt
 
-  def __init__(self, model_name, ollama_server, model_temperature=0.1, output_format = 'json', keep_alive = 0):
-    super().__init__(
-      ollama_server=ollama_server, 
-      output_format=output_format, 
-      keep_alive=keep_alive,
-      model_name=model_name,
-      model_temperature=model_temperature
-    )
+  def __init__(self):
+    self.ollama_server=settings.models.ollama_server
+    self.output_format=OUTPUT_FORMAT
+    self.keep_alive=ACTOR_KEEP_ALIVE
+    self.model_name=settings.models.actor.model_name
+    self.model_temperature=settings.models.actor.temperature
     
-    self.context_provider = ContextProvider()
     self.client = ollama.Client(host=self.ollama_server)
 
   def run(self, user_prompt, attach_screenshot=True, skills=None):
@@ -212,7 +198,7 @@ Taskbar Elements
     }
 
     if attach_screenshot:
-      user_message["images"] = [self.context_provider.get_screenshot(window_title=self.context_provider.get_active_window())]
+      user_message["images"] = [context_provider.get_screenshot(window_title=context_provider.get_active_window())]
 
     system_prompt = self.build_system_prompt_with_skills(skills)
 

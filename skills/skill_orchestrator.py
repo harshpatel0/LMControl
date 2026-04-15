@@ -39,6 +39,8 @@ class Skills:
 
   def load_all_requested_skills(self, skills, consumer):
     """Loads all requested skills for a particular consumer"""
+    logger.debug(f"Attempting install of the following skills {skills} for consumer: {consumer}")
+
     loaded_skills = []
     for skill in skills:
       logger.info(f"Installing Skill {skill}")
@@ -48,8 +50,11 @@ class Skills:
           continue
       
       loaded_skills.append(f"## Skill: {skill}\n{skill_content}")
+    
+    skill_load_output = "\n\n".join(loaded_skills) if loaded_skills else None
+    logger.debug(f"Loaded Skills \n{skill_load_output}")
 
-    return "\n\n".join(loaded_skills) if loaded_skills else None
+    return skill_load_output
 
 
   def _discover(self):

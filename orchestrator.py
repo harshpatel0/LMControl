@@ -6,15 +6,16 @@ from context_provider import ContextProvider
 from pc_actions.perform_pc_actions import PCActions
 import json
 from utils.logger import logger
+from settings.settings import settings
 
 pc_actions = PCActions()
 
 context_provider = ContextProvider()
 
-MAX_ITERATIONS_PER_STEP = 10
-MAX_AUTONOMY_STEPS = 10
-ACTION_SETTLE_TIME = 2
-MAX_REPLAN_LOOP = 7 
+MAX_ITERATIONS_PER_STEP = settings.orchestrator.max_iterations_per_step
+MAX_AUTONOMY_STEPS = settings.orchestrator.max_autonomy_steps
+ACTION_SETTLE_TIME = settings.orchestrator.action_settle_time
+MAX_REPLAN_LOOP = settings.orchestrator.max_replan_loop
 
 def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
   task = steps['task']
@@ -112,6 +113,7 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
 
         print(f"[STEP_ORCHESTRATOR] Replan requested, overriding instruction.")
         additional_context = f"Ignore the original step instruction. Execute this single atomic action only: {next_action}"
+        continue
 
       elif action_result == "RETRY":
         logger.warning(f"[STEP_ORCHESTRATOR] Retrying with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
@@ -119,6 +121,8 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
           additional_context = f"{step_result['message']}"
         except Exception:
           additional_context = "The Action Parser was not able to parse your action. Be more careful with the format in this run."
+        finally:
+          continue
 
       elif isinstance(action_result, dict):
         logger.debug(action_result)
@@ -174,11 +178,11 @@ The code/skill ran successfully, here are the logs of the Output and Error Strea
         raise Exception(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
 
 if __name__ == "__main__":
-  plan = models.planner_model.make_plan("Open a Taarak Metha ka Ooltah Chasmah Video on YouTube")
+  plan = models.planner_model.make_plan("Send a toast message saying Hello World!")
   printed_plan = json.dumps(plan, indent=2)
   print(printed_plan)
   perform_steps(
     steps=plan,
-    action_settle_time=4,
+    action_settle_time=7,
     skills=plan.get("_actor_skills")
   )
