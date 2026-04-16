@@ -15,22 +15,13 @@ skill_orchestrator = Skills()
 
 OUTPUT_FORMAT = "json"
 
-PLANNER_KEEP_ALIVE = 0
-ACTOR_KEEP_ALIVE = -1
-
 context_provider = ContextProvider()
 
 class PlannerModel():
   system_prompt = Strings.PLANNER_BASE_SYSTEM_PROMPT
 
-  def __init__(self):
-    self.ollama_server=settings.models.ollama_server
-    self.output_format=OUTPUT_FORMAT
-    self.keep_alive=PLANNER_KEEP_ALIVE
-    self.model_name=settings.models.planner.model_name
-    self.model_temperature=settings.models.planner.temperature
-    
-    self.client = ollama.Client(host=self.ollama_server)
+  def __init__(self):    
+    self.client = ollama.Client(host=settings.models.ollama_server)
   
   def skill_installation_mode(self, task):
     skill_mode_system_prompt = self.system_prompt
@@ -64,15 +55,15 @@ Remember, the skills you install are also installed for the actor.
     skills_mode_user_prompt = f"Commence skill installation mode. Return a list of skills to install as per required output scheme that you might need to complete this task: {task}"
 
     response = self.client.chat(
-      model=self.model_name,
+      model=settings.models.planner.modes.skill_installation.model_name,
       messages=[
         {"role": "system", "content": skill_mode_system_prompt},
         {"role": "user", "content": skills_mode_user_prompt}
       ],
       options={
-        "temperature": 0.1
+        "temperature": settings.models.planner.modes.skill_installation.temperature
       },
-      keep_alive=0,
+      keep_alive=settings.models.planner.modes.skill_installation.keep_alive,
       format="json"
     )
 
@@ -120,16 +111,16 @@ Treat skill actions as first-class actions alongside the standard ones above.
 """
 
     response = self.client.chat(
-      model=self.model_name,
+      model=settings.models.planner.model_name,
       messages=[
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt}
       ],
       options={
-        "temperature": self.model_temperature
+        "temperature": settings.models.planner.temperature
       },
-      keep_alive=self.keep_alive,
-      format = self.output_format
+      keep_alive=settings.models.planner.keep_alive,
+      format=OUTPUT_FORMAT
     )
 
     logger.info(f"Thinking: {response.message.thinking}") 
@@ -178,13 +169,7 @@ Taskbar Elements
     return user_prompt
 
   def __init__(self):
-    self.ollama_server=settings.models.ollama_server
-    self.output_format=OUTPUT_FORMAT
-    self.keep_alive=ACTOR_KEEP_ALIVE
-    self.model_name=settings.models.actor.model_name
-    self.model_temperature=settings.models.actor.temperature
-    
-    self.client = ollama.Client(host=self.ollama_server)
+    self.client = ollama.Client(host=settings.models.ollama_server)
 
   def run(self, user_prompt, attach_screenshot=True, skills=None):
     user_message = {
@@ -199,20 +184,20 @@ Taskbar Elements
 
     if settings.models.actor.thinking:
       system_prompt = system_prompt + "<|think|>"
-      
+
     system_prompt = self.build_system_prompt_with_skills(skills)
 
     response = self.client.chat(
-      model=self.model_name,
+      model=settings.models.actor.model_name,
       messages=[
         {"role": "system", "content": system_prompt},
         user_message
       ],
       options={
-        "temperature": self.model_temperature
+        "temperature": settings.models.actor.temperature
       },
-      keep_alive=self.keep_alive,
-      format=self.output_format
+      keep_alive=settings.models.actor.keep_alive,
+      format=OUTPUT_FORMAT
     )
 
     if hasattr(response.message, 'thinking') and response.message.thinking:
