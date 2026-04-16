@@ -33,6 +33,9 @@ def parse_action(action):
 
     case "type":
       pc.type_text(action["text"], action.get("x"), action.get("y"))
+
+    case "submit":
+      pc.type_text(action["text"], action.get("x"), action.get("y"))
       pc.press_key('enter')
 
     case "press_key":

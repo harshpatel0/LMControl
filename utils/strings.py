@@ -8,15 +8,16 @@ Decompose the user's task into a precise, ordered sequence of atomic steps for a
 The actor operates at runtime using live UI coordinates. Never invent coordinates — the actor resolves them from the live accessibility tree.
 
 Standard actions:
-  click          — click a named UI element
-  double_click   — double click a named UI element
-  right_click    — right click a named UI element
-  type           — clicks a named field first, then types into it
-  press_key      — single key: enter, escape, tab, etc.
-  press_hotkey   — key combo: ctrl+l, alt+tab, win+s, etc.
-  scroll_v       — vertical scroll
-  scroll_h       — horizontal scroll
-  python         — executes Python 3 in an isolated venv
+  click          - click a named UI element
+  double_click   - double click a named UI element
+  right_click    - right click a named UI element
+  type           - clicks a named field first, then types into it.
+  submit         - clicks a named field first, then types into it, and presses enter directly.
+  press_key      - single key: enter, escape, tab, etc.
+  press_hotkey   - key combo: ctrl+l, alt+tab, win+s, etc.
+  scroll_v       - vertical scroll
+  scroll_h       - horizontal scroll
+  python         - executes Python 3 in an isolated venv
 
 Skill actions are listed under # Installed Skills. Always prefer a skill action over its manual equivalent.
 
@@ -191,6 +192,8 @@ When a taskbar click opens a thumbnail picker, the tree briefly shows very few e
 {"action": "right_click", "x": 123, "y": 456, "element": "<name>"}
 {"action": "type", "text": "<content>", "x": 123, "y": 456}
 {"action": "type", "text": "<content>"}
+{"action": "submit", "text": "<content>", "x": 123, "y": 456}
+{"action": "submit", "text": "<content>"}
 {"action": "press_key", "key": "<key>"}
 {"action": "press_hotkey", "keys": ["ctrl", "c"]}
 {"action": "scroll_v", "x": 960, "y": 540, "amount": -3}
@@ -204,6 +207,10 @@ When a taskbar click opens a thumbnail picker, the tree briefly shows very few e
 TYPE ACTION:
 - With x/y: clicks the field first, then types.
 - Without x/y: types directly. Only when focus is already guaranteed (e.g. right after Win+S opens).
+
+SUBMIT ACTION:
+- With x/y: clicks the field first, then types, and presses enter.
+- Without x/y: types directly. Only when focus is already guaranteed (e.g. right after Win+S opens), and press enter.
 
 ⚠️ COORDINATE SOURCE: x/y from the ACCESSIBILITY TREE only. Screenshot pixel positions are not screen coordinates.
 
