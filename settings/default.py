@@ -1,0 +1,33 @@
+default_settings = {
+  "models": {
+    "ollama_server": "localhost:11434",
+    "planner": {
+      "model_name": "gemma4:e4b",
+      "thinking": True,
+      "temperature": 0.7,
+      "keep_alive": 0,
+      "modes": {
+        "skill_installation": {
+          "model_name": "gemma4:e4b",
+          "temperature": 0.1,
+          "keep_alive": 0
+        }
+      }
+    },
+    "actor": {
+      "model_name": "gemma4:e4b",
+      "thinking": True,
+      "temperature": 0.1,
+      "keep_alive": 30
+    }
+  },
+  "orchestrator": {
+    "max_iterations_per_step": 10,
+    "max_autonomy_steps": 10,
+    "action_settle_time": 2,
+    "max_replan_loop": 7
+  },
+  "context_provider": {
+    "waiting_period": 4
+  }
+}
