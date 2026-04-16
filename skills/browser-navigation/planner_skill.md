@@ -75,3 +75,13 @@ Lead the user directly to the resource:
 - **Form**: Fill it as per user instructions or available autofill.
 - **Page search**: Use the site's own search box. If not visible, plan a step to click the search icon first.
 - **Internet search**: Use address bar only before reaching the relevant site.
+- 
+## Result Click Steps
+
+When a step clicks a search result, the instruction MUST include the search 
+query as a match constraint:
+
+WRONG: "Click the video result for the desired episode"
+RIGHT: "Click the first video result whose title contains '<<what the user requested>>'"
+
+The actor must verify the element name contains the expected string before clicking.

@@ -26,7 +26,6 @@ Priority order:
 The new tab page search box (Bing, Google widget on new tab) is a trap element — do not use it for anything.
 
 ---
-
 ## Address Bar
 
 Use Ctrl+L to focus the address bar before typing a URL. After Ctrl+L, the bar is focused — emit the type action immediately.
@@ -73,8 +72,22 @@ The type action submits automatically. If the page title does not change after a
 If a type action fails to navigate three consecutive times:
 - `/` to focus YouTube or GitHub search
 - `Ctrl+L` to focus the browser address bar
+- 
+## Result Matching
 
-## Completing the Action
+When a step instruction says "whose title contains [X]", verify the element 
+name in the accessibility tree contains that string before clicking.
+If no matching element is visible, scroll_v to find one. 
+Never click an element whose name does not match the constraint.
+
+
+## Rules 
+### WRONG SITE RECOVERY
+If the active window URL contains "bing.com" or 
+"google.com/search" and the task involves YouTube, immediately use 
+open_url to return to youtube.com. Do not search on Bing.
+
+### Completing the Action
 
 Lead the user directly to the resource:
 
