@@ -22,7 +22,7 @@ class Skills:
     """Gets the skill document for either `consumer`: planner | actor"""
 
     if not self.has_skill(skill):
-      logger.warning(f"Skill '{skill}' not found")
+      logger.warning(f"Requested skill '{skill}' not found")
       return None
 
     consumer = consumer.lower()
@@ -43,13 +43,14 @@ class Skills:
 
     loaded_skills = []
     for skill in skills:
-      logger.info(f"Installing Skill {skill}")
+      logger.info(f"Installing Skill {skill} for {consumer}")
       skill_content = self.get_skill_doc(skill, consumer)
       
       if skill_content is None:
           continue
       
       loaded_skills.append(f"## Skill: {skill}\n{skill_content}")
+      logger.info(f"Loaded all skills: {skills} for all consumers")
     
     skill_load_output = "\n\n".join(loaded_skills) if loaded_skills else None
     logger.debug(f"Loaded Skills \n{skill_load_output}")

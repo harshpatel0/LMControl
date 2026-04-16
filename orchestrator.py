@@ -129,7 +129,7 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
         action_result_stderr = action_result.get('stderr')
         action_result_stdout = action_result.get('stdout')
 
-        logger.info(f"Action Result Type: {action_result_type}\nAction Result stderr: {action_result_stderr}\nAction Result stdout: {action_result_stdout}")
+        logger.debug(f"Action Result Type for Custom Actions: {action_result_type}\nAction Result stderr: {action_result_stderr}\nAction Result stdout: {action_result_stdout}")
 
         if action_result_type == "IMPORT_DISCOVERY_ERROR":
           additional_context = f"The modules in the code/skill could not be discovered, and so cannot be run without errors\nHere are the errors returned: {action_result_stderr}"

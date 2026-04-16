@@ -22,8 +22,8 @@ context.get_installed_apps()
 def make_plan(task: str):
   planner_skills, actor_skills = planner_model.skill_installation_mode(task)
 
-  logger.info(f"[PlannerModel] Planner skills loaded: {planner_skills is not None}")
-  logger.info(f"[PlannerModel] Actor skills loaded: {actor_skills is not None}")
+  logger.debug(f"Planner skills loaded: {planner_skills is not None}")
+  logger.debug(f"Actor skills loaded: {actor_skills is not None}")
 
   response = planner_model.run(task=task, skills=planner_skills)
   logger.info(response)
