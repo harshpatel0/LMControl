@@ -1,0 +1,8 @@
+ollama
+pygetwindow
+winapps
+pyautogui
+pywinauto
+pywin32
+rootutils
+keyboard
