@@ -11,7 +11,7 @@ def setup_shared_logger(name, log_file="lmcontrol.log"):
   console_handler.setFormatter(formatter)
   console_handler.setLevel(logging.INFO) 
 
-  file_handler = logging.FileHandler(log_file)
+  file_handler = logging.FileHandler(log_file, mode='w', encoding='utf-8')
   file_handler.setFormatter(formatter)
   file_handler.setLevel(logging.DEBUG) 
 
