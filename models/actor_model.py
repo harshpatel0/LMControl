@@ -15,11 +15,13 @@ def do_step(step, task, additional_context=None, punishment_tally=None, skills=N
 
   user_prompt = actor_model.construct_user_prompt(task=task, instruction=instruction, expected_result=expected_result)
 
-  if additional_context:
+  if additional_context != "":
     user_prompt = actor_model.return_prompt_with_additional_context(user_prompt, additional_context)
       
   if punishment_tally:
-    user_prompt = actor_model.return_prompt_with_additional_context(user_prompt, punishment_tally, "Here are the number of iterations you have made on this task")
+    user_prompt = actor_model.return_prompt_with_additional_context(user_prompt, 
+                                                                    additional_context=punishment_tally, 
+                                                                    accompanying_message="Here are the number of iterations you have made on this task")
   
   response = actor_model.run(user_prompt, attach_screenshot=True, skills=skills)
   action = json.loads(utils.strip_markdown_json(response).strip())

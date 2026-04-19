@@ -25,7 +25,9 @@ class ContextProvider:
   def _get_elements_from_window(self, window):
     last_count = 0
     stable_ticks = 0
+    skip_after_ticks = 0
     WAITING_PERIOD = settings.context_provider.waiting_period
+    SKIP_TICKS = settings.context_provider.skip_after_ticks
 
     while stable_ticks < WAITING_PERIOD:
       try:
@@ -40,7 +42,11 @@ class ContextProvider:
         last_count = current_count
       
       if stable_ticks < WAITING_PERIOD:
+        skip_after_ticks += 1
         time.sleep(0.25)
+
+      if skip_after_ticks == SKIP_TICKS:
+        break
 
     logger.info(f"UI Stabilized with {last_count} elements. Extracting data...")
 
@@ -163,7 +169,8 @@ class ContextProvider:
       elements = self._get_elements_from_window(window)
 
       logger.debug(elements)
-      return "\n".join(elements) if elements else "No UI elements found."
+      # return "\n".join(elements) if elements else "No UI elements found."
+      return elements
     except Exception as e:
       return f"Could not read UI tree: {str(e)}"
     
@@ -177,3 +184,54 @@ if __name__ == "__main__":
       logger.info(cp.get_ui_tree(cp.get_active_window()))
     if keyboard.is_pressed('q'):
       quit()
+
+
+THRESHOLD_PERCENTAGE = 20
+class UITreeHandler:
+  context_provider = None
+
+  def __init__(self):
+    self.context_provider = ContextProvider()
+    self.current_tree = self.context_provider.get_ui_tree()
+    self.previous_tree = self.current_tree
+    self.initial_load = True
+
+  def _get_tree(self):
+    """Gathers added or removed trees as differences, rather than spitting the whole tree out"""
+
+    self.previous_tree = self.current_tree
+    self.current_tree = self.context_provider.get_ui_tree()
+
+    added_items = set(self.current_tree) - set(self.previous_tree)
+    removed_items = set(self.previous_tree) - set(self.current_tree)
+
+    return (added_items, removed_items)
+  
+  def request_tree_diffs(self):
+    added_items, removed_items = self._get_tree()
+
+    items_in_current_tree = len(self.current_tree)
+    items_in_previous_tree = len(self.previous_tree)
+
+    difference_in_items_from_trees = abs(items_in_current_tree - items_in_previous_tree)
+    threshold_of_item_changes = (THRESHOLD_PERCENTAGE / 100) * items_in_current_tree
+
+    if difference_in_items_from_trees >= threshold_of_item_changes or self.initial_load:
+      self.initial_load = False
+      ui_tree_elements = self.current_tree
+      return_message = "Here is the full UI tree" + "\n".join(ui_tree_elements) if ui_tree_elements else "No UI elements found."
+
+      logger.info(f"Returning full UI Tree\n{return_message}")
+      return return_message
+
+    added_items_as_text = "Here are the added UI tree Items" + "\n".join(f"[+] {item}" for item in added_items) if added_items else "No additions to UI Tree were made"
+    removed_items_as_text = "Here are the removed UI tree items" + "\n".join(f"[-] {item}" for item in removed_items) if removed_items else "No removals to UI Tree were made"
+
+    ui_tree = added_items_as_text + "\n" + removed_items_as_text
+    logger.info(f"Returning UI Tree Diff\n{ui_tree}")
+    return ui_tree
+
+  def force_reload_ui_tree(self):
+    self._get_tree()
+    ui_tree_elements = self.current_tree
+    return "Here is the full UI tree" + "\n".join(ui_tree_elements) if ui_tree_elements else "No UI elements found."

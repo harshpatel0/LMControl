@@ -2,6 +2,7 @@ import rootutils
 root = rootutils.setup_root(__file__, pythonpath=True)
 
 from context_provider import ContextProvider
+from context_provider import UITreeHandler
 from skills.skill_orchestrator import Skills
 import ollama
 import json
@@ -16,6 +17,7 @@ skill_orchestrator = Skills()
 OUTPUT_FORMAT = "json"
 
 context_provider = ContextProvider()
+ui_tree_handler = UITreeHandler()
 
 class PlannerModel():
   system_prompt = Strings.PLANNER_BASE_SYSTEM_PROMPT
@@ -153,7 +155,7 @@ Active Window: {context_provider.get_active_window()}
 
 Accessibility Tree
 ControlType, name, x, y
-{context_provider.get_ui_tree()}
+{ui_tree_handler.request_tree_diffs()}
 
 # System Context
 TASKBAR (located at the bottom of the screen, y ≈ {context_provider.screen_height - 20}): 
