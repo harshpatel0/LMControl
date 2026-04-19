@@ -28,6 +28,7 @@ default_settings = {
     "max_replan_loop": 7
   },
   "context_provider": {
-    "waiting_period": 4
+    "waiting_period": 4,
+    "skip_after_ticks": 10
   }
 }
