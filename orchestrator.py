@@ -41,17 +41,17 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
 
     logger.info(f"Step Location: {step_count+1}/{len(step_list)}")
 
-    additional_context = None
+    additional_context = ""
+    temp_task = None
     replan_history = []
 
     for iterations in range(1, MAX_ITERATIONS_PER_STEP + 1):
       if iterations == MAX_ITERATIONS_PER_STEP:
-          print("[STEP_ORCHESTRATOR] Cutting my losses while I can, quitting.")
+          logger.info("Reached Maximum Allowed Iterations per Step, quitting.")
           hard_exit = True
           break
 
-      step_result = actor_model.do_step(step, task, additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step", skills=skills)
-      additional_context = None
+      step_result = actor_model.do_step(step, task if not temp_task else temp_task, additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step", skills=skills)
 
       action_result = parse_action(step_result)
 
@@ -61,9 +61,6 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
 
       if action_result == "PROCEED":
         window_after = context_provider.get_active_window()
-        action_type = step_result.get('action', '')
-        element = step_result.get('element')
-
 
         if not window_after or window_after.strip() == "":
           logger.warning("PROCEED signal but active window is empty, handling thumbnail...")
@@ -72,6 +69,8 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
           additional_context = "The previous click opened a thumbnail picker. I've tried to dismiss it. Please check the state now."
           continue
 
+        # action_type = step_result.get('action', '')
+        # element = step_result.get('element')
         # if action_type in ('click') and window_before == window_after:
         #   logger.warning("PROCEED signal but window unchanged, downgrading to RETRY")
         #   additional_context = f"You clicked '{step_result.get('element', 'unknown')}' but the window did not change. The element may be wrong or the click had no effect. Try a different element or action."
@@ -81,20 +80,21 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
 
         step_count += 1
         replan_history = []
+        additional_context = ""
         break
 
       elif action_result == "STUCK":
         logger.info(f"The Actor Model claims it is stuck, running another iteration with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
-        additional_context = f"{step_result['message']}"
+        additional_context = additional_context + f"{step_result['message']}" + "\n"
 
       elif action_result == "DONE":
         window_after = context_provider.get_active_window()
         action_type = step_result.get('action', '')
         element = step_result.get('element', '')
 
-        # if not element in window_after:
-        #   print("[STEP_ORCHESTRATOR] Could not find the element requested in the Window Title, assuming it is not done unless the actor flags done again, Forcing a retry")
-        #   continue
+        if not element in window_after:
+          logger.warning("Could not find the element requested in the Window Title, assuming it is not done unless the actor flags done again, Forcing a retry")
+          continue
         
         logger.info("The actor model claims the task is done, hard exiting...")
         hard_exit = True
@@ -109,38 +109,39 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
           hard_exit = True
           break
 
-        print(f"[STEP_ORCHESTRATOR] Replan requested, overriding instruction.")
-        additional_context = f"Ignore the original step instruction. Execute this single atomic action only: {next_action}"
+        logger.info(f"[STEP_ORCHESTRATOR] Replan requested, overriding instruction.")
+        # additional_context = additional_context + f"Ignore the original step instruction. Execute this single atomic action only: {next_action}" + "\n"
+        temp_task = next_action
+        additional_context = additional_context + "The current task is from the previous actor, instructing you what to do" + "\n"
         continue
 
       elif action_result == "RETRY":
         logger.warning(f"[STEP_ORCHESTRATOR] Retrying with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
         try:
-          additional_context = f"{step_result['message']}"
+          additional_context = additional_context + f"{step_result['message']}" + "\n"
         except Exception:
-          additional_context = "The Action Parser was not able to parse your action. Be more careful with the format in this run."
+          additional_context = additional_context + "The Action Parser was not able to parse your action. Be more careful with the format in this run." + "\n"
         finally:
           continue
 
       elif isinstance(action_result, dict):
         logger.debug(action_result)
-        print(action_result)
         action_result_type = action_result.get('result')
-        action_result_stderr = action_result.get('stderr')
-        action_result_stdout = action_result.get('stdout')
+        action_result_stderr = action_result.get('stderr', "No errors!")
+        action_result_stdout = action_result.get('stdout', "Script / Skill outputted nothing")
 
         logger.debug(f"Action Result Type for Custom Actions: {action_result_type}\nAction Result stderr: {action_result_stderr}\nAction Result stdout: {action_result_stdout}")
 
         if action_result_type == "IMPORT_DISCOVERY_ERROR":
-          additional_context = f"The modules in the code/skill could not be discovered, and so cannot be run without errors\nHere are the errors returned: {action_result_stderr}"
+          additional_context = additional_context + f"The modules in the code/skill could not be discovered, and so cannot be run without errors\nHere are the errors returned: {action_result_stderr}" + "\n"
           continue
         
         elif action_result_type == "PACKAGE_INSTALL_ERROR":
-          additional_context = f"The modules in the code/skill could not be installed, and so the code/skill cannot be run without errors\nHere are the errors returned: {action_result_stderr}"
+          additional_context = additional_context + f"The modules in the code/skill could not be installed, and so the code/skill cannot be run without errors\nHere are the errors returned: {action_result_stderr}" + "\n"
           continue
         
         elif action_result_type == "TIMEOUT":
-          additional_context = f"""
+          additional_context = additional_context + f"""
 The code/skill took too long to run and was killed prematurely. Here are the logs of its output.
 
 ## Output
@@ -148,29 +149,27 @@ The code/skill took too long to run and was killed prematurely. Here are the log
 
 ## Errors
 {action_result_stderr}
-"""
+""" + "\n"
       
         elif action_result_type == "PY_EXCEPTION":
-          additional_context = f"The subprocess running your code/skill produced an exception\n{action_result_stderr}"
+          additional_context = additional_context + f"The subprocess running your code/skill produced an exception\n{action_result_stderr}"
           continue
         
         elif action_result_type == "ERROR":
-          additional_context = f"The code/skill ran with errors\n{action_result_stderr}"
+          additional_context = additional_context + f"The code/skill ran with errors\n{action_result_stderr}"
           continue
         
         elif action_result_type == "SUCCESS":
-          additional_context = f"""
+          additional_context = additional_context + f"""
 The code/skill ran successfully, here are the logs of the Output and Error Stream
 
 ## Output
 {action_result_stdout}
-
-## Errors
-{action_result_stderr}
-"""
+""" + "\n"
           step_count += 1
           replan_history = []
-          continue
+          additional_context = ""
+          break
 
         else:
           logger.error(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
