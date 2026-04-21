@@ -176,7 +176,7 @@ The code/skill ran successfully, here are the logs of the Output and Error Strea
           raise Exception(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
 
 if __name__ == "__main__":
-  plan = models.planner_model.make_plan("Put an episode of Taarak Metha Ka Ooltah Chasmah on YouTube")
+  plan = models.planner_model.make_plan("Invoke a Windows Notification with the text, Hello World!")
   printed_plan = json.dumps(plan, indent=2)
   print(printed_plan)
   perform_steps(
