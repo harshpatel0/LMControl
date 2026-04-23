@@ -145,12 +145,12 @@ class PythonRunner:
     if preparation_result:
       return preparation_result
   
-    cmd = [self.venv_python, entry_path]
+    command = [self.venv_python, entry_path]
 
     if args:
-      cmd.append(json.dumps(args))
+      command.append(json.dumps(args))
 
-    execution_result = self.execute_code(cmd)
+    execution_result = self.execute_code(command)
     return execution_result
     
   def run(self, code, timeout=15):

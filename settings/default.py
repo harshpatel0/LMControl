@@ -18,7 +18,8 @@ default_settings = {
       "model_name": "gemma4:e4b",
       "thinking": True,
       "temperature": 0.1,
-      "keep_alive": 30
+      "keep_alive": 30,
+      "attach_screenshot_of_active_window": False
     }
   },
   "orchestrator": {

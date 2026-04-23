@@ -58,6 +58,11 @@ def parse_action(action):
         position_y=action["y"]
       )
     
+    case "clear_field":
+      pc.click(action.get('x'), action.get("y"))
+      pc.press_hotkey(['ctrl', 'a'])
+      pc.press_key('backspace')
+    
     case "python":
       result = pyrun.run(action['code'])
       return result

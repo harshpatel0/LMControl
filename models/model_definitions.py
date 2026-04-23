@@ -173,13 +173,13 @@ Taskbar Elements
   def __init__(self):
     self.client = ollama.Client(host=settings.models.ollama_server)
 
-  def run(self, user_prompt, attach_screenshot=True, skills=None):
+  def run(self, user_prompt, skills=None):
     user_message = {
       "role": "user",
       "content": user_prompt
     }
 
-    if attach_screenshot:
+    if settings.models.actor.attach_screenshot_of_active_window:
       user_message["images"] = [context_provider.get_screenshot(window_title=context_provider.get_active_window())]
 
     system_prompt = ""

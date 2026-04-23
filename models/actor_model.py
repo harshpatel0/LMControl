@@ -23,7 +23,7 @@ def do_step(step, task, additional_context=None, punishment_tally=None, skills=N
                                                                     additional_context=punishment_tally, 
                                                                     accompanying_message="Here are the number of iterations you have made on this task")
   
-  response = actor_model.run(user_prompt, attach_screenshot=True, skills=skills)
+  response = actor_model.run(user_prompt, skills=skills)
   action = json.loads(utils.strip_markdown_json(response).strip())
 
   if not action:

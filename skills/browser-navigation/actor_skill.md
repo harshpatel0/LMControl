@@ -30,7 +30,7 @@ The new tab page search box (Bing, Google widget on new tab) is a trap element â
 
 Use Ctrl+L to focus the address bar before typing a URL. After Ctrl+L, the bar is focused â€” emit the type action immediately.
 
-Before typing, check the screenshot: if the previous URL is still visible and not highlighted, emit Ctrl+A then Backspace to clear it. This prevents malformed URLs like `youtube.comhttps://`.
+Before typing, check the screenshot: if the previous URL is still visible and not highlighted, clear the field first. This prevents malformed URLs like `youtube.comhttps://`.
 
 ## YouTube and Site Search Boxes
 

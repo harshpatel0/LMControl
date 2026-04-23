@@ -110,7 +110,7 @@ def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
           break
 
         logger.info(f"[STEP_ORCHESTRATOR] Replan requested, overriding instruction.")
-        # additional_context = additional_context + f"Ignore the original step instruction. Execute this single atomic action only: {next_action}" + "\n"
+
         temp_task = next_action
         additional_context = additional_context + "The current task is from the previous actor, instructing you what to do" + "\n"
         continue
@@ -176,11 +176,10 @@ The code/skill ran successfully, here are the logs of the Output and Error Strea
           raise Exception(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
 
 if __name__ == "__main__":
-  plan = models.planner_model.make_plan("Put an episode of Taarak Metha Ka Ooltah Chasmah on YouTube")
+  plan = models.planner_model.make_plan("Open up Microsoft Word and type a report on dinosaurs")
   printed_plan = json.dumps(plan, indent=2)
   print(printed_plan)
   perform_steps(
     steps=plan,
-    action_settle_time=7,
     skills=plan.get("_actor_skills")
   )

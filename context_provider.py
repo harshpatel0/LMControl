@@ -48,7 +48,7 @@ class ContextProvider:
       if skip_after_ticks == SKIP_TICKS:
         break
 
-    logger.info(f"UI Stabilized with {last_count} elements. Extracting data...")
+    logger.debug(f"UI Stabilized with {last_count} elements. Extracting data...")
 
     seen = set()
     elements = []
@@ -221,14 +221,14 @@ class UITreeHandler:
       ui_tree_elements = self.current_tree
       return_message = "Here is the full UI tree" + "\n".join(ui_tree_elements) if ui_tree_elements else "No UI elements found."
 
-      logger.info(f"Returning full UI Tree\n{return_message}")
+      logger.debug(f"Returning full UI Tree\n{return_message}")
       return return_message
 
     added_items_as_text = "Here are the added UI tree Items" + "\n".join(f"[+] {item}" for item in added_items) if added_items else "No additions to UI Tree were made"
     removed_items_as_text = "Here are the removed UI tree items" + "\n".join(f"[-] {item}" for item in removed_items) if removed_items else "No removals to UI Tree were made"
 
     ui_tree = added_items_as_text + "\n" + removed_items_as_text
-    logger.info(f"Returning UI Tree Diff\n{ui_tree}")
+    logger.debug(f"Returning UI Tree Diff\n{ui_tree}")
     return ui_tree
 
   def force_reload_ui_tree(self):
