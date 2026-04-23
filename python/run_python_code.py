@@ -152,6 +152,20 @@ class PythonRunner:
 
     execution_result = self.execute_code(command)
     return execution_result
+  
+  def run_skill_context_generator(self, entry_path):
+    with open(entry_path, 'r', encoding='utf-8') as file:
+      skill_code = file.read()
+    
+    preparation_result = self.prepare_environment(skill_code)
+
+    if preparation_result:
+      return preparation_result
+  
+    command = [self.venv_python, entry_path, '--generate']
+    execution_result = self.execute_code(command)
+
+    return execution_result['stdout']
     
   def run(self, code, timeout=15):
     logger.info(f"Running Python code\n{code}")

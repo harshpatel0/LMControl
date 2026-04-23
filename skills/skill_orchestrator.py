@@ -24,11 +24,23 @@ class Skills:
     if not self.has_skill(skill):
       logger.warning(f"Requested skill '{skill}' not found")
       return None
+    
+    skill_metadata = self._skills[skill]
+    print(skill_metadata)
 
     consumer = consumer.lower()
     filename = f"{consumer}_skill.md"
-    skill_path = self._skills[skill]["path"]
+    skill_path = skill_metadata["path"]
     doc_path = os.path.join(skill_path, filename)
+
+    if skill_metadata['dynamic_context']:
+      skill_entry_point = skill_metadata['entry']
+      output = self._runner.run_skill_context_generator(skill_entry_point)
+      logger.debug(f"Output from generator for {skill}")
+
+      output = json.loads(output)
+      skill_definition = output[consumer]
+      return skill_definition
 
     if not os.path.exists(doc_path):
       logger.warning(f"No {filename} found for skill '{skill}'")
@@ -50,7 +62,7 @@ class Skills:
           continue
       
       loaded_skills.append(f"## Skill: {skill}\n{skill_content}")
-      logger.info(f"Loaded all skills: {skills} for all consumers")
+      logger.info(f"Loaded all skills: {skills} for {consumer}")
     
     skill_load_output = "\n\n".join(loaded_skills) if loaded_skills else None
     logger.debug(f"Loaded Skills \n{skill_load_output}")
@@ -61,6 +73,7 @@ class Skills:
   def _discover(self):
     for skill_folder in os.listdir(SKILLS_DIR):
       skill_path = os.path.join(SKILLS_DIR, skill_folder)
+      if skill_folder.startswith("__"): continue
 
       if not os.path.isdir(skill_path):
         continue
@@ -75,6 +88,8 @@ class Skills:
         "description": None,
         "has_planner_skill": os.path.exists(os.path.join(skill_path, "PLANNER_SKILL.md")),
         "has_actor_skill": os.path.exists(os.path.join(skill_path, "ACTOR_SKILL.md")),
+        "dynamic_context": False,
+        "entry": None
       }
 
       if os.path.exists(skill_json):
@@ -83,7 +98,14 @@ class Skills:
             definition = json.load(f)
 
           if not definition.get("enabled", True):
+            logger.debug(f"Skipping disabling skill: {skill_folder}")
             continue
+
+          if definition.get("dynamic_context", False):
+            logger.debug(f"Found a skill that dynamically generates it's context: {skill_folder}")
+            skill_entry["dynamic_context"] = True
+            skill_entry["has_actor_skill"] = definition.get("generated_for_actor")
+            skill_entry["has_planner_skill"] = definition.get("generated_for_planner")
 
           entry = os.path.join(skill_path, definition["entry"])
 
@@ -93,6 +115,7 @@ class Skills:
             skill_entry["executable"] = True
             skill_entry["actions"] = definition.get("actions", [])
             skill_entry["description"] = definition.get("description")
+            skill_entry['entry'] = entry
 
             for action in definition.get("actions", []):
               self._dispatch[action] = entry
@@ -118,6 +141,8 @@ class Skills:
         status.append("planner guide")
       if skill["has_actor_skill"]:
         status.append("actor guide")
+      if skill["dynamic_context"]:
+        status.append("context dynamically generated")
       desc = f" — {skill['description']}" if skill["description"] else ""
       lines.append(f"- {skill['name']}{desc} [{', '.join(status)}]")
     return "\n".join(lines)
@@ -152,3 +177,5 @@ if __name__ == "__main__":
   print(skills.get_skills_summary())
   print(skills.get_available_skills())
   print(skills.can_handle('open_url'))
+  print(skills.load_all_requested_skills(["launch-windows-app"], 'planner'))
+  print(skills.load_all_requested_skills(["launch-windows-app"], 'actor'))

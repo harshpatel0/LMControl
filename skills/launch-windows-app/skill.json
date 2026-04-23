@@ -1,0 +1,9 @@
+{
+  "name": "launch-windows-app",
+  "description": "Discover and launch any installed Windows app in the start menu by it's name",
+  "actions": ["open_app"],
+  "entry": "skill.py",
+  "dynamic_context": true,
+  "generated_for_actor": true,
+  "generated_for_planner": true
+}
