@@ -15,7 +15,6 @@ class Skills:
   _dispatch = {}
   _runner = PythonRunner()
 
-  installed_skills = []
   _skills = {}
 
   def get_skill_doc(self, skill, consumer):
@@ -94,7 +93,7 @@ class Skills:
 
       if os.path.exists(skill_json):
         try:
-          with open(skill_json) as f:
+          with open(skill_json, encoding='utf-8') as f:
             definition = json.load(f)
 
           if not definition.get("enabled", True):

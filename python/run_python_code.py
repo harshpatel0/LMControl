@@ -137,7 +137,7 @@ class PythonRunner:
       }
 
   def run_skill_by_path(self, entry_path, args=None):
-    with open(entry_path, 'r') as file:
+    with open(entry_path, 'r', encoding='utf-8') as file:
       skill_code = file.read()
     
     preparation_result = self.prepare_environment(skill_code)

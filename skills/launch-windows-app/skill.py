@@ -21,7 +21,7 @@ def open_app(app_name):
   if not app_name:
     print("Error: No app name.", file=sys.stderr)
   app_map = get_launchable_apps()
-  target = next((path for name, path in app_map.items() if nane.lower() == app_name.lower()), None)
+  target = next((path for name, path in app_map.items() if name.lower() == app_name.lower()), None)
   
   if target:
     os.startfile(target)

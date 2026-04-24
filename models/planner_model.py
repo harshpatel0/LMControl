@@ -3,15 +3,10 @@ root = rootutils.setup_root(__file__, pythonpath=True)
 
 import json
 from context_provider import ContextProvider
-from models.model_definitions import PlannerModel
+from models.ollama.model_definitions import PlannerModel
 from skills.skill_orchestrator import Skills
 import utils.utils as utils
 from utils.logger import logger
-
-MODEL_NAME = "gemma4:e4b"
-OLLAMA_SERVER = "http://192.168.68.254:11434/"
-MODEL_TEMPERATURE = 0.7
-KEEP_ALIVE = 0
 
 planner_model = PlannerModel()
 skill_orchestrator = Skills()
