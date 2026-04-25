@@ -17,9 +17,28 @@ class ContextProvider:
   screen_width, screen_height = pyautogui.size()
 
   ALLOWED_CONTROL_TYPES = {
-    "Button", "Edit", "ComboBox", "MenuItem", "MenuBar",
-    "TabItem", "Hyperlink", "ListItem", "TreeItem", "CheckBox",
-    "RadioButton", "Slider", "ToolBar", "SearchBox", "Text"
+    # Core interactive controls
+    "Button", "Edit", "ComboBox", "List", "ListItem",
+    "Menu", "MenuItem", "MenuBar",
+    "CheckBox", "RadioButton", "Slider", "Spinner",
+
+    # Text + document
+    "Text", "Document",
+
+    # Containers / structure
+    "Pane", "Group", "Window", "Custom",
+
+    # Navigation / hierarchy
+    "Tree", "TreeItem", "Tab", "TabItem",
+
+    # Advanced / less common but useful
+    "Hyperlink", "DataItem", "DataGrid", "Table",
+
+    # Tooling / UX
+    "ToolBar", "StatusBar", "TitleBar",
+
+    # Modern UI patterns
+    "SplitButton", "Thumb", "ProgressBar"
   }
 
   def _get_elements_from_window(self, window):
@@ -29,9 +48,10 @@ class ContextProvider:
     WAITING_PERIOD = settings.context_provider.waiting_period
     SKIP_TICKS = settings.context_provider.skip_after_ticks
 
+    # --- Stabilization phase ---
     while stable_ticks < WAITING_PERIOD:
       try:
-        current_count = len(window.descendants()) 
+        current_count = len(window.descendants())
       except:
         current_count = 0
 
@@ -40,7 +60,7 @@ class ContextProvider:
       else:
         stable_ticks = 0
         last_count = current_count
-      
+
       if stable_ticks < WAITING_PERIOD:
         skip_after_ticks += 1
         time.sleep(0.25)
@@ -52,7 +72,8 @@ class ContextProvider:
 
     seen = set()
     elements = []
-    
+
+    # Window bounds
     try:
       win_rect = window.rectangle()
       bounds = (win_rect.left, win_rect.top, win_rect.right, win_rect.bottom)
@@ -61,15 +82,12 @@ class ContextProvider:
 
     win_left, win_top, win_right, win_bottom = bounds
 
-    # Single pass extraction
-    for el in window.descendants():
+    for element in window.descendants():
       try:
-        ctrl_type = el.element_info.control_type
-        if ctrl_type not in self.ALLOWED_CONTROL_TYPES:
-          continue
+        ctrl_type = element.element_info.control_type
 
-        # Check Rectangle (Fast)
-        rect = el.rectangle()
+        # --- Bounds check (fast reject) ---
+        rect = element.rectangle()
         if rect.width() == 0 or rect.height() == 0:
           continue
 
@@ -79,19 +97,56 @@ class ContextProvider:
         if not (win_left <= target_x <= win_right and win_top <= target_y <= win_bottom):
           continue
 
-        # Check Text (SLOW - requires querying the other process)
-        element_name = el.window_text().strip()
-        if not element_name or len(element_name) > 100:
+        # --- Expand dropdowns (ComboBox) ---
+        try:
+          expand = element.iface_expand_collapse_pattern
+          if expand and expand.CurrentExpandCollapseState == 0:  # Collapsed
+            expand.Expand()
+            time.sleep(0.05)
+        except:
+          pass
+
+        # --- Extract basic name ---
+        try:
+          element_name = element.window_text().strip()
+        except:
+          element_name = ""
+
+        # --- Extract TextPattern ---
+        text_content = None
+        try:
+          text_pattern = element.iface_text_pattern
+          if text_pattern:
+            text_content = text_pattern.DocumentRange.GetText(-1)
+            if text_content:
+              text_content = text_content.strip()
+        except:
+            pass
+
+        # --- Extract ValuePattern ---
+        value = None
+        try:
+          value_pattern = element.iface_value_pattern
+          if value_pattern:
+            value = value_pattern.CurrentValue
+            if value:
+              value = value.strip()
+        except:
+            pass
+
+        # --- filtering ---
+        if not (element_name or text_content or value):
           continue
 
-        if ctrl_type == "Text" and len(element_name) <= 1:
+        # --- Deduplication key --- ---
+        key = (ctrl_type, element_name, text_content, value, target_x, target_y)
+        if key in seen:
           continue
 
-        key = (ctrl_type, element_name, target_x, target_y)
-        if key not in seen:
-          seen.add(key)
-          elements.append(f"{ctrl_type} | name='{element_name}' | x={target_x} y={target_y}")
-      except:
+        seen.add(key)
+        elements.append(f"{ctrl_type} | name='{element_name}' | x={target_x} y={target_y}")
+
+      except Exception:
         continue
 
     logger.debug(f"Final scan found {len(elements)} elements.")
