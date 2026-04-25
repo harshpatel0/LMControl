@@ -1,0 +1,7 @@
+{
+  "name": "word-navigation",
+  "description": "A comprehensive mapping of Microsoft Word's interface and command structure. Provides exact procedural steps for document creation, ribbon navigation, and advanced formatting. Essential for determining the precise menu paths and keyboard sequences required to operate Word effectively.",
+  "enabled": true,
+  "actions": [""],
+  "entry": ""
+}

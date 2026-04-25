@@ -1,8 +1,10 @@
 {
   "name": "launch-windows-app",
-  "description": "Discover and launch any installed Windows app in the start menu by it's name",
+  "description": "REQUIRED TO LAUNCH ANY APP EVEN IF IT IS OPEN AS IT GUARANTEES IT!!! Initializes local Windows software environments. Programmatically searches the Start Menu to find and execute installed desktop applications by name. Use this for launching local productivity tools, IDEs, or system utilities that do not have dedicated web-based launch skills.",
   "actions": ["open_app"],
   "entry": "skill.py",
+  "enabled": true,
+
   "dynamic_context": true,
   "generated_for_actor": true,
   "generated_for_planner": true
