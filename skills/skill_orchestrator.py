@@ -61,7 +61,8 @@ class Skills:
           continue
       
       loaded_skills.append(f"## Skill: {skill}\n{skill_content}")
-      logger.info(f"Loaded all skills: {skills} for {consumer}")
+    
+    logger.info(f"Loaded all skills: {skills} for {consumer}")
     
     skill_load_output = "\n\n".join(loaded_skills) if loaded_skills else None
     logger.debug(f"Loaded Skills \n{skill_load_output}")
@@ -106,7 +107,8 @@ class Skills:
             skill_entry["has_actor_skill"] = definition.get("generated_for_actor")
             skill_entry["has_planner_skill"] = definition.get("generated_for_planner")
 
-          entry = os.path.join(skill_path, definition["entry"])
+          if definition.get('entry', None):
+            entry = os.path.join(skill_path, definition["entry"])
 
           if not os.path.exists(entry):
             logger.warning(f"Warning: entry '{entry}' not found for skill '{skill_folder}', skipping executable.")
