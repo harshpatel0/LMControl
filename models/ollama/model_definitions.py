@@ -7,7 +7,7 @@ from skills.skill_orchestrator import Skills
 import ollama
 import json
 
-from utils.strings import Strings
+import utils.strings as Strings
 from utils.logger import logger
 
 from settings.settings import settings
@@ -26,35 +26,11 @@ class PlannerModel():
     self.client = ollama.Client(host=settings.models.ollama_server)
   
   def skill_installation_mode(self, task):
-    skill_mode_system_prompt = self.system_prompt
-
-    # Ignoring thinking here, the model is capable enough to install the correct skill on its own, thinking will just slow it down for no real benefit
-
-    skill_mode_system_prompt = skill_mode_system_prompt + f"""
-# Skill Installation Mode
-
-You are currently in Skill Installation Mode.
-In this mode, as discussed prior, you have a list of skills available to you, to extend both
-yours, and the actor's capabilities. Any installation will add functionality to you and the actor.
-
-Even if a skill does not benefit you but it benefits the actor, install it.
-
-Make sure to install only the skills you need for the task, if none of the skills work for you. Simply return an empty list of skills.
-Installing too many skills may slow down planning and execution.
-
-Here are the available skills
-{skill_orchestrator.get_skills_summary()}
-
-Here is how to request an install
-{{
-  "skills": ["skill1", "skill2"]
-}}
-
-Some skills also have actions associated with them, as also discussed prior, these actions are treated the same as the other actor's capabilities you saw for the model.
-Remember, the skills you install are also installed for the actor.
-"""
-    # Maybe a watered down skill selection system prompt can make things better. For next trial
+    skill_mode_system_prompt = Strings.SKILL_INSTALLATION_PROMPT
+    skill_mode_system_prompt = skill_mode_system_prompt + "\n" + f"{skill_orchestrator.get_skills_summary()}"
     skills_mode_user_prompt = f"Commence skill installation mode. Return a list of skills to install as per required output scheme that you might need to complete this task: {task}"
+
+    logger.debug(f"Skill Installation Mode System Prompt\n{skill_mode_system_prompt}")
 
     response = self.client.chat(
       model=settings.models.planner.modes.skill_installation.model_name,
@@ -73,7 +49,11 @@ Remember, the skills you install are also installed for the actor.
     skills = json.loads(skills)
     skills = skills.get("skills", [])
 
+    logger.debug(f"Requested Skills from Planner \n {skills}")
+
     installable_skills = [skill for skill in skills if skill_orchestrator.has_skill(skill)]
+
+    logger.debug(f"Installable skills: {installable_skills}")
 
     planner_skills = skill_orchestrator.load_all_requested_skills(installable_skills, 'planner')
     actor_skills = skill_orchestrator.load_all_requested_skills(installable_skills, 'actor')
@@ -111,6 +91,8 @@ Treat skill actions as first-class actions alongside the standard ones above.
 
 {skills}
 """
+      
+    logger.debug(f"System Prompt: \n {system_prompt}")
 
     response = self.client.chat(
       model=settings.models.planner.model_name,
