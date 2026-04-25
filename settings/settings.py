@@ -1,5 +1,4 @@
 import json
-import os
 from types import SimpleNamespace
 from settings.default import default_settings
 
