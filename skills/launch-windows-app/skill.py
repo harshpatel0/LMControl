@@ -26,7 +26,8 @@ def open_app(app_name):
   if target:
     os.startfile(target)
     print(f"Launched {app_name}")
-  print(f"App {app_name} not found.", file=sys.stderr)
+  else:
+    print(f"App {app_name} not found.", file=sys.stderr)
 
 def get_list_of_installed_apps():
   return get_launchable_apps().keys()
