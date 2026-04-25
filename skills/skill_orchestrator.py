@@ -52,7 +52,7 @@ class Skills:
     """Loads all requested skills for a particular consumer"""
     logger.debug(f"Attempting install of the following skills {skills} for consumer: {consumer}")
 
-    loaded_skills = []
+    self.loaded_skills = []
     for skill in skills:
       logger.info(f"Installing Skill {skill} for {consumer}")
       skill_content = self.get_skill_doc(skill, consumer)
@@ -60,11 +60,11 @@ class Skills:
       if skill_content is None:
           continue
       
-      loaded_skills.append(f"## Skill: {skill}\n{skill_content}")
+      self.loaded_skills.append(f"## Skill: {skill}\n{skill_content}")
     
     logger.info(f"Loaded all skills: {skills} for {consumer}")
     
-    skill_load_output = "\n\n".join(loaded_skills) if loaded_skills else None
+    skill_load_output = "\n\n".join(self.loaded_skills) if self.loaded_skills else None
     logger.debug(f"Loaded Skills \n{skill_load_output}")
 
     return skill_load_output

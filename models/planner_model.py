@@ -3,19 +3,20 @@ root = rootutils.setup_root(__file__, pythonpath=True)
 
 import json
 from context_provider import ContextProvider
-from models.ollama.model_definitions import PlannerModel
+from models.ollama.model_definitions import PlannerModel, SkillInstallationMode
 from skills.skill_orchestrator import Skills
 import utils.utils as utils
 from utils.logger import logger
 
 planner_model = PlannerModel()
 skill_orchestrator = Skills()
+skill_installation = SkillInstallationMode()
 
 context = ContextProvider()
 context.get_installed_apps()
 
 def make_plan(task: str):
-  planner_skills, actor_skills = planner_model.skill_installation_mode(task)
+  planner_skills, actor_skills = skill_installation.run(task)
 
   logger.debug(f"Planner skills loaded: {planner_skills is not None}")
   logger.debug(f"Actor skills loaded: {actor_skills is not None}")

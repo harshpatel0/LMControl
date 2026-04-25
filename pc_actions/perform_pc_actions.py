@@ -15,7 +15,7 @@ class PCActions:
   def hscroll(self, scroll_amount, position_x, position_y):
     pyautogui.hscroll(clicks=scroll_amount, x=position_x, y=position_y)
 
-  def type_text(self, text, position_x, position_y, interval=0.1):
+  def type_text(self, text, position_x, position_y, interval=0.01):
     if position_x != None or position_y != None:
       self.click(button='left', position_x=position_x, position_y=position_y)
 
@@ -24,6 +24,28 @@ class PCActions:
 
   def press_key(self, key):
     pyautogui.press(keys=key)
+
+  def drag(self, from_x, from_y, to_x, to_y, duration=0.5, steps=100):
+
+    pyautogui.moveTo(from_x, from_y)
+    pyautogui.mouseDown()
+
+    start_time = time.time()
+
+    for i in range(steps + 1):
+      t = i / steps
+
+      current_x = from_x + (to_x - from_x) * t
+      current_y = from_y + (to_y - from_y) * t
+
+      pyautogui.moveTo(current_x, current_y)
+
+      elapsed = time.time() - start_time
+      target = t * duration
+      if target > elapsed:
+        time.sleep(target - elapsed)
+
+    pyautogui.mouseUp()
 
   def press_hotkey(self, hotkey):
     pyautogui.hotkey(*hotkey)

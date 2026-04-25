@@ -44,6 +44,16 @@ def parse_action(action):
     case "press_hotkey":
       pc.press_hotkey(action["keys"])
 
+    case "drag":
+      pc.drag(
+        from_x=int(action["from_x"]),
+        from_y=int(action["from_y"]),
+        to_x=int(action["to_x"]),
+        to_y=int(action["to_y"]),
+        button=action.get("button", "left"),
+        duration=action.get("duration", 0.5)
+      )
+
     case "scroll_v":
       pc.vscroll(
         scroll_amount=action["amount"],

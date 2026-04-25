@@ -19,24 +19,23 @@ OUTPUT_FORMAT = "json"
 context_provider = ContextProvider()
 ui_tree_handler = UITreeHandler()
 
-class PlannerModel():
-  system_prompt = Strings.PLANNER_BASE_SYSTEM_PROMPT
-
-  def __init__(self):    
+class SkillInstallationMode():
+  def __init__(self):
     self.client = ollama.Client(host=settings.models.ollama_server)
   
-  def skill_installation_mode(self, task):
-    skill_mode_system_prompt = Strings.SKILL_INSTALLATION_PROMPT
-    skill_mode_system_prompt = skill_mode_system_prompt + "\n" + f"{skill_orchestrator.get_skills_summary()}"
-    skills_mode_user_prompt = f"Commence skill installation mode. Return a list of skills to install as per required output scheme that you might need to complete this task: {task}"
+  def get_installed_skills(self):
+    return skill_orchestrator.loaded_skills
 
-    logger.debug(f"Skill Installation Mode System Prompt\n{skill_mode_system_prompt}")
-
+  def run(self, task, use_autonomy_mode=False):
+    system_prompt = Strings.SKILL_INSTALLATION_PROMPT
+    system_prompt = system_prompt + "\n" + f"{skill_orchestrator.get_skills_summary()}"
+    user_prompt = f"Commence skill installation mode. Return a list of skills to install as per required output scheme that you might need to complete this task: {task}"
+    
     response = self.client.chat(
       model=settings.models.planner.modes.skill_installation.model_name,
       messages=[
-        {"role": "system", "content": skill_mode_system_prompt},
-        {"role": "user", "content": skills_mode_user_prompt}
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
       ],
       options={
         "temperature": settings.models.planner.modes.skill_installation.temperature
@@ -55,11 +54,22 @@ class PlannerModel():
 
     logger.debug(f"Installable skills: {installable_skills}")
 
+    if use_autonomy_mode:
+      actor_skills = skill_orchestrator.load_all_requested_skills(installable_skills, 'actor')
+      return actor_skills, self.get_installed_skills()
+
     planner_skills = skill_orchestrator.load_all_requested_skills(installable_skills, 'planner')
     actor_skills = skill_orchestrator.load_all_requested_skills(installable_skills, 'actor')
 
     return planner_skills, actor_skills
-  
+
+
+class PlannerModel():
+  system_prompt = Strings.PLANNER_BASE_SYSTEM_PROMPT
+
+  def __init__(self):
+    self.client = ollama.Client(host=settings.models.ollama_server)
+
   def run(self, task, skills=None):
     user_prompt = f"""
 # PC Environment
@@ -91,8 +101,6 @@ Treat skill actions as first-class actions alongside the standard ones above.
 
 {skills}
 """
-      
-    logger.debug(f"System Prompt: \n {system_prompt}")
 
     response = self.client.chat(
       model=settings.models.planner.model_name,
@@ -107,17 +115,22 @@ Treat skill actions as first-class actions alongside the standard ones above.
       format=OUTPUT_FORMAT
     )
 
-    logger.info(f"Thinking: {response.message.thinking}") 
+    logger.info(f"Thinking: {response.message.thinking}")
     response = response.message.content.strip()
     return response
 
 class ActorModel():
-  system_prompt = Strings.ACTOR_BASE_SYSTEM_PROMPT
+  def build_system_prompt_with_skills(self, skills=None, use_autonomy_mode = False):
 
-  def build_system_prompt_with_skills(self, skills=None):
+    if use_autonomy_mode:
+      active_system_prompt = Strings.AUTONOMY_MODE_SYSTEM_PROMPT
+    else:
+      active_system_prompt = Strings.ACTOR_BASE_SYSTEM_PROMPT
+
     if not skills:
-      return self.system_prompt
-    return self.system_prompt + f"""
+      return active_system_prompt
+    
+    return active_system_prompt + f"""
 ## Installed Skills
 The following skills have been installed and their actions are available to you.
 Treat skill actions as first-class actions alongside the standard ones above.
@@ -155,7 +168,7 @@ Taskbar Elements
   def __init__(self):
     self.client = ollama.Client(host=settings.models.ollama_server)
 
-  def run(self, user_prompt, skills=None):
+  def run(self, user_prompt, skills=None, use_autonomy_mode=False):
     user_message = {
       "role": "user",
       "content": user_prompt
@@ -169,7 +182,7 @@ Taskbar Elements
     if settings.models.actor.thinking:
       system_prompt = system_prompt + "<|think|>"
 
-    system_prompt = self.build_system_prompt_with_skills(skills)
+    system_prompt = system_prompt + self.build_system_prompt_with_skills(skills, use_autonomy_mode=use_autonomy_mode)
 
     response = self.client.chat(
       model=settings.models.actor.model_name,
