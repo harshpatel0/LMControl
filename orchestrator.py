@@ -10,138 +10,107 @@ from settings.settings import settings
 
 pc_actions = PCActions()
 
-context_provider = ContextProvider()
-
 MAX_ITERATIONS_PER_STEP = settings.orchestrator.max_iterations_per_step
 MAX_AUTONOMY_STEPS = settings.orchestrator.max_autonomy_steps
 ACTION_SETTLE_TIME = settings.orchestrator.action_settle_time
 MAX_REPLAN_LOOP = settings.orchestrator.max_replan_loop
 
-def perform_steps(steps, action_settle_time=ACTION_SETTLE_TIME, skills=None):
-  task = steps['task']
-  step_list = steps['steps']
+class StepOrchestrator:
+  def __init__(self, steps, skills):
+    self.steps = steps['steps']
+    self.task = steps['task']
+    self.skills = skills
 
-  step_count = 0
-  hard_exit = False
+    self.step_list = steps['steps']
 
-  while not hard_exit:
-    in_autonomy = step_count >= len(step_list)
+    self.step_count = 0
+    self.additional_context = ""
+    self.replan_history = []
 
-    if in_autonomy:
-      if step_count >= len(step_list) + MAX_AUTONOMY_STEPS:
-        logger.critical("Autonomy budget exhausted, exiting.")
-        break
-      logger.info("[Step Orchestrator > Basic Autonomy Mode] Running in Basic Autonomy Mode")
-      step = {
-        "instruction": "Autonomy Mode — the planned steps are complete but the task may not be done. Continue independently and call done when finished. Your hand is not going to be held in this mode, so just complete the task how you think you can.",
-        "expected_result": "The original task is fully complete."
-      }
-    else:
-      step = step_list[step_count]
+    self.in_autonomy = False
+    self.hard_exit = False
 
-    logger.info(f"Step Location: {step_count+1}/{len(step_list)}")
+    self.context_provider = ContextProvider()
 
-    additional_context = ""
-    temp_task = None
-    replan_history = []
+    self.handlers = {
+      "PROCEED": self.handleProceed,
+      "DONE": self.handleDone,
+      "STUCK": self.handleStuck,
+      "REPLAN": self.handleReplan,
+      "RETRY": self.handleRetry,
+    }
 
-    for iterations in range(1, MAX_ITERATIONS_PER_STEP + 1):
-      if iterations == MAX_ITERATIONS_PER_STEP:
-          logger.info("Reached Maximum Allowed Iterations per Step, quitting.")
-          hard_exit = True
-          break
+  def handleProceed(self):
+    self.step_count += 1
+    self.replan_history = []
+    self.additional_context = ""
+    self.iterations = 0
 
-      step_result = actor_model.do_step(step, task if not temp_task else temp_task, additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step", skills=skills)
+    return "BREAK"
 
-      action_result = parse_action(step_result)
+  def handleDone(self):
+    logger.info("The actor model claims the task is done, hard exiting...")
+    window_after = self.context_provider.get_active_window()
+    element = self.step_result.get('element', '')
 
-      logger.debug(f"Action Result: {action_result}")
+    if element and element not in window_after:
+      logger.warning(f"Actor claimed DONE, but '{element}' not in Window. Forcing retry.")
+      self.additional_context += (
+        f"You claimed to be done, but I cannot see '{element}' in the active window. "
+        "Please ensure the action completed correctly.\n"
+      )
+      return "CONTINUE"
 
-      time.sleep(action_settle_time)
+    self.hard_exit = True
+    return "BREAK"
 
-      if action_result == "PROCEED":
-        window_after = context_provider.get_active_window()
+  def handleStuck(self):
+    logger.info(f"The Actor Model claims it is stuck, running another iteration with added context {self.iterations+1}/{MAX_ITERATIONS_PER_STEP}")
+    self.additional_context = self.additional_context + f"{self.step_result['message']}" + "\n"
+    return "CONTINUE"
 
-        if not window_after or window_after.strip() == "":
-          logger.warning("PROCEED signal but active window is empty, handling thumbnail...")
-          pc_actions.dismiss_taskbar_thumbnail_overlay()
-          time.sleep(2)
-          additional_context = "The previous click opened a thumbnail picker. I've tried to dismiss it. Please check the state now."
-          continue
+  def handleReplan(self):
+    next_action = self.step_result.get('next', '')
+    self.replan_history.append(next_action)
 
-        # action_type = step_result.get('action', '')
-        # element = step_result.get('element')
-        # if action_type in ('click') and window_before == window_after:
-        #   logger.warning("PROCEED signal but window unchanged, downgrading to RETRY")
-        #   additional_context = f"You clicked '{step_result.get('element', 'unknown')}' but the window did not change. The element may be wrong or the click had no effect. Try a different element or action."
-        #   continue
+    if len(self.replan_history) >= MAX_REPLAN_LOOP and len(set(self.replan_history[-MAX_REPLAN_LOOP:])) == 1:
+      logger.critical(f"Replan loop detected ({MAX_REPLAN_LOOP} identical replans), forcing exit.")
+      self.hard_exit = True
 
-        # This keeps punishing the model for something it is not really responsible for, looking for other ways to handle this.
+    logger.info(f"[STEP_ORCHESTRATOR] Replan requested, overriding instruction.")
 
-        step_count += 1
-        replan_history = []
-        additional_context = ""
-        break
+    self.temp_task = next_action
+    self.additional_context = self.additional_context + "The current task is from the previous actor, instructing you what to do" + "\n"
+    return "CONTINUE"
 
-      elif action_result == "STUCK":
-        logger.info(f"The Actor Model claims it is stuck, running another iteration with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
-        additional_context = additional_context + f"{step_result['message']}" + "\n"
 
-      elif action_result == "DONE":
-        window_after = context_provider.get_active_window()
-        action_type = step_result.get('action', '')
-        element = step_result.get('element', '')
+  def handleRetry(self):
+    logger.warning(f"[STEP_ORCHESTRATOR] Retrying with added context {self.iterations+1}/{MAX_ITERATIONS_PER_STEP}")
+    try:
+      self.additional_context = self.additional_context + f"{self.step_result['message']}" + "\n"
+    except Exception:
+      self.additional_context = self.additional_context + "The Action Parser was not able to parse your action. Be more careful with the format in this run." + "\n"
+    return "CONTINUE"
 
-        if not element in window_after:
-          logger.warning("Could not find the element requested in the Window Title, assuming it is not done unless the actor flags done again, Forcing a retry")
-          continue
-        
-        logger.info("The actor model claims the task is done, hard exiting...")
-        hard_exit = True
-        break
+  def handle_skill_invocations(self, action_result):
+    logger.debug(action_result)
+    action_result_type = action_result.get('result')
+    action_result_stderr = action_result.get('stderr', "No errors!")
+    action_result_stdout = action_result.get('stdout', "Script / Skill outputted nothing")
 
-      elif action_result == "REPLAN":
-        next_action = step_result.get('next', '')
-        replan_history.append(next_action)
+    logger.debug(f"Action Result Type for Custom Actions: {action_result_type}\nAction Result stderr: {action_result_stderr}\nAction Result stdout: {action_result_stdout}")
 
-        if len(replan_history) >= MAX_REPLAN_LOOP and len(set(replan_history[-MAX_REPLAN_LOOP:])) == 1:
-          logger.critical(f"Replan loop detected ({MAX_REPLAN_LOOP} identical replans), forcing exit.")
-          hard_exit = True
-          break
+    if action_result_type == "IMPORT_DISCOVERY_ERROR":
+      self.additional_context = self.additional_context + f"The modules in the code/skill could not be discovered, and so cannot be run without errors\nHere are the errors returned: {action_result_stderr}" + "\n"
+      return "CONTINUE"
+    
+    elif action_result_type == "PACKAGE_INSTALL_ERROR":
+      self.additional_context = self.additional_context + f"The modules in the code/skill could not be installed, and so the code/skill cannot be run without errors\nHere are the errors returned: {action_result_stderr}" + "\n"
+      return "CONTINUE"
 
-        logger.info(f"[STEP_ORCHESTRATOR] Replan requested, overriding instruction.")
-
-        temp_task = next_action
-        additional_context = additional_context + "The current task is from the previous actor, instructing you what to do" + "\n"
-        continue
-
-      elif action_result == "RETRY":
-        logger.warning(f"[STEP_ORCHESTRATOR] Retrying with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}")
-        try:
-          additional_context = additional_context + f"{step_result['message']}" + "\n"
-        except Exception:
-          additional_context = additional_context + "The Action Parser was not able to parse your action. Be more careful with the format in this run." + "\n"
-        finally:
-          continue
-
-      elif isinstance(action_result, dict):
-        logger.debug(action_result)
-        action_result_type = action_result.get('result')
-        action_result_stderr = action_result.get('stderr', "No errors!")
-        action_result_stdout = action_result.get('stdout', "Script / Skill outputted nothing")
-
-        logger.debug(f"Action Result Type for Custom Actions: {action_result_type}\nAction Result stderr: {action_result_stderr}\nAction Result stdout: {action_result_stdout}")
-
-        if action_result_type == "IMPORT_DISCOVERY_ERROR":
-          additional_context = additional_context + f"The modules in the code/skill could not be discovered, and so cannot be run without errors\nHere are the errors returned: {action_result_stderr}" + "\n"
-          continue
-        
-        elif action_result_type == "PACKAGE_INSTALL_ERROR":
-          additional_context = additional_context + f"The modules in the code/skill could not be installed, and so the code/skill cannot be run without errors\nHere are the errors returned: {action_result_stderr}" + "\n"
-          continue
-        
-        elif action_result_type == "TIMEOUT":
-          additional_context = additional_context + f"""
+    
+    elif action_result_type == "TIMEOUT":
+      self.additional_context = self.additional_context + f"""
 The code/skill took too long to run and was killed prematurely. Here are the logs of its output.
 
 ## Output
@@ -150,36 +119,85 @@ The code/skill took too long to run and was killed prematurely. Here are the log
 ## Errors
 {action_result_stderr}
 """ + "\n"
+      return "CONTINUE"
       
-        elif action_result_type == "PY_EXCEPTION":
-          additional_context = additional_context + f"The subprocess running your code/skill produced an exception\n{action_result_stderr}"
-          continue
-        
-        elif action_result_type == "ERROR":
-          additional_context = additional_context + f"The code/skill ran with errors\n{action_result_stderr}"
-          continue
-        
-        elif action_result_type == "SUCCESS":
-          additional_context = additional_context + f"""
+  
+    elif action_result_type == "PY_EXCEPTION":
+      self.additional_context = self.additional_context + f"The subprocess running your code/skill produced an exception\n{action_result_stderr}"
+      return "CONTINUE"
+
+    
+    elif action_result_type == "ERROR":
+      self.additional_context = self.additional_context + f"The code/skill ran with errors\n{action_result_stderr}"
+      return "CONTINUE"
+    
+    elif action_result_type == "SUCCESS":
+      self.additional_context = self.additional_context + f"""
 The code/skill ran successfully, here are the logs of the Output and Error Stream
 
 ## Output
 {action_result_stdout}
 """ + "\n"
-          step_count += 1
-          replan_history = []
-          additional_context = ""
+      self.step_count += 1
+      self.replan_history = []
+      self.additional_context = ""
+      return "BREAK"
+    
+    else:
+      logger.error(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
+      raise Exception(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
+    
+
+  def run(self):
+    while not self.hard_exit:
+      self.in_autonomy = self.step_count >= len(self.steps)
+
+      if self.in_autonomy:
+        if self.step_count >= len(self.steps) + MAX_AUTONOMY_STEPS:
+          logger.critical("Autonomy budget exhausted, exiting.")
+          break
+        logger.info("[Step Orchestrator > Basic Autonomy Mode] Running in Basic Autonomy Mode")
+        step = {
+          "instruction": "Autonomy Mode — the planned steps are complete but the task may not be done. Continue independently and call done when finished. Your hand is not going to be held in this mode, so just complete the task how you think you can.",
+          "expected_result": "The original task is fully complete."
+        }
+      else:
+        step = self.steps[self.step_count]
+
+      logger.info(f"Step Location: {self.step_count+1}/{len(self.steps)}")
+
+      self.additional_context = ""
+      self.temp_task = None
+      self.replan_history = []
+
+      for iterations in range(1, MAX_ITERATIONS_PER_STEP + 1):
+        self.iterations = iterations
+        if iterations == MAX_ITERATIONS_PER_STEP:
+          logger.info("Reached Maximum Allowed Iterations per Step, quitting.")
+          self.hard_exit = True
           break
 
-        else:
-          logger.error(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
-          raise Exception(f"Unhandled action result: '{action_result}'. The LLM may have hallucinated an action type.")
+        self.step_result = actor_model.do_step(step, self.task, self.additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step", skills=self.skills)
+        action_result = parse_action(self.step_result)
+
+        logger.debug(f"Action Result: {action_result}")
+        time.sleep(settings.orchestrator.action_settle_time)
+
+        if isinstance(action_result, str):
+          handler = self.handlers[action_result]
+          signal = handler()
+        elif isinstance(action_result, dict):
+          signal = self.handle_skill_invocations(action_result)
+
+        if signal == "BREAK":
+          break
+        if signal == "CONTINUE" or signal == None:
+          continue
 
 if __name__ == "__main__":
-  plan = models.planner_model.make_plan("Open up Microsoft Word and type a report on dinosaurs")
+  plan = models.planner_model.make_plan("Open gemini.google.com, and write and send a full report on dinosaurs and ask it to proof read your work.")
   printed_plan = json.dumps(plan, indent=2)
   print(printed_plan)
-  perform_steps(
-    steps=plan,
-    skills=plan.get("_actor_skills")
-  )
+
+  step_orchestrator = StepOrchestrator(steps=plan, skills=plan.get("_actor_skills"))
+  step_orchestrator.run()
