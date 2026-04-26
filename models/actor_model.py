@@ -19,9 +19,11 @@ def do_step(step, task, additional_context=None, punishment_tally=None, skills=N
     user_prompt = actor_model.return_prompt_with_additional_context(user_prompt, additional_context)
       
   if punishment_tally:
-    user_prompt = actor_model.return_prompt_with_additional_context(user_prompt, 
-                                                                    additional_context=punishment_tally, 
-                                                                    accompanying_message="Here are the number of iterations you have made on this task")
+    user_prompt = actor_model.return_prompt_with_additional_context(
+      user_prompt, 
+      additional_context=punishment_tally, 
+      accompanying_message="Here are the number of iterations you have made on this task"
+    )
   
   response = actor_model.run(user_prompt, skills=skills)
   action = json.loads(utils.strip_markdown_json(response).strip())
@@ -69,7 +71,7 @@ def do_autonomy_step(task, history=None, additional_context=None, punishment_tal
       accompanying_message="Here is a running history of everything you said you did:"
     )
 
-  response = actor_model.run(user_prompt, skills=skills, use_autonomy_mode=True)
+  response = actor_model.run(user_prompt, skills=skills)
   action = json.loads(utils.strip_markdown_json(response).strip())
 
   if not action:
