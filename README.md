@@ -105,15 +105,15 @@ Open `orchestrator.py` and set your task at the bottom of the file. There are tw
 
 ```python
 # Planner-Actor mode
-USE_EXPERIMENTAL_AUTONOMY_MODE = False
 plan = models.planner_model.make_plan("Open Notepad and write a shopping list")
 
 # Autonomy mode
-USE_EXPERIMENTAL_AUTONOMY_MODE = True
 autonomy_orchestrator = AutonomyOrchestrator(task="Open Word and write a full report on dinosaurs")
 autonomy_orchestrator.run_skill_installation_mode()
 autonomy_orchestrator.run()
 ```
+
+- Define the settings in `settings.json` on the mode you would like to use under `settings > orchestrator > use_experimental_autonomy_mode`
 
 Then:
 
