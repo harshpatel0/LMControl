@@ -68,7 +68,7 @@ class ActionHandlers:
     logger.info(f"[STEP_ORCHESTRATOR] Replan requested, overriding instruction.")
 
     self.orchestrator.temp_task = next_action
-    self.orchestrator.additional_context = self.orchestrator.additional_context + "The current task is from the previous actor, instructing you what to do" + "\n"
+    self.orchestrator.additional_context = self.orchestrator.additional_context + "The current task is from the previous actor, instructing you what to do, when you are done with it, call an action and do not emit done under any circumstances" + "\n"
     return "CONTINUE"
   
   def handleRetry(self):
@@ -152,14 +152,16 @@ class StepOrchestrator:
     self.hard_exit = False
 
     self.context_provider = ContextProvider()
-    self.action_hander = ActionHandlers(orchestrator=self)
+    self.action_handler = ActionHandlers(orchestrator=self)
+
+    self.temp_task = None
 
     self.handlers = {
-      "PROCEED": self.action_hander.handleProceed,
-      "DONE": self.action_hander.handleDone,
-      "STUCK": self.action_hander.handleStuck,
-      "REPLAN": self.action_hander.handleReplan,
-      "RETRY": self.action_hander.handleRetry,
+      "PROCEED": self.action_handler.handleProceed,
+      "DONE": self.action_handler.handleDone,
+      "STUCK": self.action_handler.handleStuck,
+      "REPLAN": self.action_handler.handleReplan,
+      "RETRY": self.action_handler.handleRetry,
     }
 
   def run(self):
@@ -191,7 +193,7 @@ class StepOrchestrator:
           self.hard_exit = True
           break
 
-        self.step_result = actor_model.do_step(step, self.task, self.additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step", skills=self.skills)
+        self.step_result = actor_model.do_step(step, self.task if not self.temp_task else self.temp_task, self.additional_context, punishment_tally=f"Iteration {iterations}/{MAX_ITERATIONS_PER_STEP} for this step", skills=self.skills)
         action_result = parse_action(self.step_result)
 
         logger.debug(f"Action Result: {action_result}")
@@ -201,7 +203,7 @@ class StepOrchestrator:
           handler = self.handlers[action_result]
           signal = handler()
         elif isinstance(action_result, dict):
-          signal = self.action_hander.handle_skill_invocations(action_result)
+          signal = self.action_handler.handle_skill_invocations(action_result)
 
         if signal == "BREAK":
           break
@@ -229,6 +231,7 @@ class AutonomyOrchestrator:
     self.handlers = {
       "PROCEED": self.action_handler.handleProceed,
       "DONE": self.action_handler.handleDone,
+      "RETRY": self.action_handler.handleRetry,
     }
 
   def run_skill_installation_mode(self):
@@ -309,27 +312,34 @@ Output of Iteration: {self.iterations}
 """)
         time.sleep(settings.orchestrator.action_settle_time)
 
+        successful_run = False
+
         if isinstance(action_result, dict):
           self.action_handler.handle_skill_invocations(action_result)
+          successful_run = True
         elif action_result in self.handlers.keys():
           handler = self.handlers[action_result]
           handler()
+          successful_run = True
         else:
-          raise NotImplementedError(f"Unhandled action result: {action_result}")
+          logger.warning(f"Unhandled action result: {action_result}")
+          self.additional_context = self.additional_context + f"\n Unhandled action result: {action_result}. You may have hallucinated it. Proceeding without handling it, and history not appended."
 
-      self.history = self.history + f"\n {self.step_result.get('history', "")}"
-      self.runtime_skills = None
+      if successful_run:
+        self.history = self.history + f"\n {self.step_result.get('history', "")}"
+        self.runtime_skills = None
 
-USE_EXPERIMENTAL_AUTONOMY_MODE = True
 if __name__ == "__main__":
-  if not USE_EXPERIMENTAL_AUTONOMY_MODE:
-    plan = models.planner_model.make_plan("Open gemini.google.com, and write and send a full report on dinosaurs and ask it to proof read your work.")
+  task = "Open a blank document in Microsoft Word and type a full comprehensive report on dinosaurs, all of what you know, neatly formatted with headings and bullet points."
+
+  if not settings.orchestrator.use_experimental_autonomy_mode:
+    plan = models.planner_model.make_plan(task)
     printed_plan = json.dumps(plan, indent=2)
     print(printed_plan)
 
     step_orchestrator = StepOrchestrator(steps=plan, skills=plan.get("_actor_skills"))
     step_orchestrator.run()
   else:
-    autonomy_orchestrator = AutonomyOrchestrator(task="Open a blank document in Microsoft Word and type a full comprehensive report on dinosaurs, all of what you know, neatly formatted with headings and bullet points Proofread the report and make any necessary edits to ensure it is of the highest quality.")
+    autonomy_orchestrator = AutonomyOrchestrator(task=task)
     autonomy_orchestrator.run_skill_installation_mode()
     autonomy_orchestrator.run()
