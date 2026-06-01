@@ -11,9 +11,6 @@ root = rootutils.setup_root(__file__, pythonpath=True)
 
 from fastapi import (
     FastAPI,
-    HTTPException,
-    status,
-    Header,
     WebSocket,
     WebSocketDisconnect,
     WebSocketException,
@@ -25,8 +22,6 @@ from fastapi.responses import FileResponse
 
 from orchestrator import run_externally
 from settings.settings import settings
-
-from typing import Annotated
 
 import time
 from fastapi.responses import StreamingResponse
