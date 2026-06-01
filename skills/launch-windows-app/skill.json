@@ -1,6 +1,6 @@
 {
   "name": "launch-windows-app",
-  "description": "REQUIRED TO LAUNCH ANY APP EVEN IF IT IS OPEN AS IT GUARANTEES IT!!! Initializes local Windows software environments. Programmatically searches the Start Menu to find and execute installed desktop applications by name. Use this for launching local productivity tools, IDEs, or system utilities that do not have dedicated web-based launch skills.",
+  "description": "REQUIRED TO LAUNCH ANY INSTALLED APP EVEN IF IT IS OPEN AS IT GUARANTEES IT!!! DO NOT INSTALL THIS SKILL IF YOU ARE ASKED TO INSTALL AN APP!!!! Initializes local Windows software environments. Programmatically searches the Start Menu to find and execute installed desktop applications by name. Use this for launching local productivity tools, IDEs, or system utilities that do not have dedicated web-based launch skills.",
   "actions": ["open_app"],
   "entry": "skill.py",
   "enabled": true,
