@@ -277,7 +277,6 @@ textarea {
   margin-bottom: var(--sp-5);
 }
 
-/* ── Log Viewer ── */
 #log-viewer {
   background: var(--bg-base);
   border: 1px solid var(--border-subtle);
@@ -286,7 +285,6 @@ textarea {
   flex-direction: column;
   min-height: 340px;
   max-height: 520px;
-  overflow: hidden;
 }
 
 .log-toolbar {
@@ -332,15 +330,15 @@ textarea {
   background: var(--bg-elevated);
 }
 
-.log-filter-btn[data-level="DEBUG"].active  { color: var(--text-muted); }
-.log-filter-btn[data-level="INFO"].active   { color: var(--cyan); border-color: var(--cyan-dim); }
+.log-filter-btn[data-level="DEBUG"].active   { color: var(--text-muted); }
+.log-filter-btn[data-level="INFO"].active    { color: var(--cyan); border-color: var(--cyan-dim); }
 .log-filter-btn[data-level="WARNING"].active{ color: var(--amber); border-color: var(--amber-dim); }
 .log-filter-btn[data-level="ERROR"].active,
 .log-filter-btn[data-level="CRITICAL"].active { color: var(--red); border-color: var(--red-dim); }
 
 .log-body {
   flex: 1;
-  overflow-y: auto;
+  overflow: auto;
   padding: var(--sp-3) var(--sp-4);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -362,6 +360,7 @@ textarea {
   gap: var(--sp-3);
   padding: 1px 0;
   border-radius: var(--radius-sm);
+  min-width: max-content;
 }
 
 .log-line:hover { background: var(--bg-elevated); }
@@ -369,7 +368,13 @@ textarea {
 .log-ts     { color: var(--text-muted); flex-shrink: 0; }
 .log-level  { flex-shrink: 0; width: 52px; font-weight: 500; }
 .log-module { color: var(--text-muted); flex-shrink: 0; width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.log-msg    { color: var(--text-secondary); word-break: break-all; }
+
+.log-msg { 
+  color: var(--text-secondary); 
+  word-break: break-all; 
+  white-space: pre-wrap;
+  flex: 1;     
+}       
 
 .log-line[data-level="DEBUG"]    .log-level { color: var(--text-muted); }
 .log-line[data-level="INFO"]     .log-level { color: var(--cyan); }

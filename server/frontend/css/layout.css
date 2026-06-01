@@ -191,5 +191,9 @@
 @media (max-width: 844px) {
   .two-col {
     grid-template-columns: 1fr !important;
-  }  /* Correctly overrides the layout above */
+  }
+
+  .page-content {
+    padding: var(--sp-1);
+  }
 }
