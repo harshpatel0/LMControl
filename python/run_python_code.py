@@ -70,10 +70,15 @@ class PythonRunner:
         )
 
         if result.returncode != 0:
-            return {
-                "result": "NOT_RUN",
-                "message": "Could not install packages from Pip into venv",
-            }
+            if (
+                "Could not find a version that satisfies the requirement"
+                not in result.stderr
+            ):
+                return {
+                    "result": "NOT_RUN",
+                    "message": "Could not install packages from Pip into venv",
+                }
+            # If a dependency could not be found ignore it, as it could be a dependency that has a different name, dependencies like that should be defined in skill.json
 
         return None
 
