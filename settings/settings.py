@@ -1,9 +1,13 @@
 import json
 from types import SimpleNamespace
 from settings.default import default_settings
+from typing import Any
 
 
 class Settings:
+    orchestrator: Any
+    context_provider: Any
+
     def __init__(self, file_path: str) -> None:
         self.file_path = file_path
         self.load_settings()
