@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LMControl</title>
+  <title>Kodo</title>
 
   <link rel="stylesheet" href="/static/css/variables.css" />
   <link rel="stylesheet" href="/static/css/base.css" />
@@ -27,7 +27,7 @@
   </div>
   <div class="offline-title">API Not Running</div>
   <div class="offline-subtitle">
-    LMControl's backend API is unreachable. Make sure the server is running,
+    Kodo's backend API is unreachable. Make sure the server is running,
     then click Retry to reconnect.
   </div>
   <div class="offline-url" id="offline-api-url"></div>
@@ -41,54 +41,34 @@
 ════════════════════════════════════════════════ -->
 <div id="app">
 
-  <!-- ── Sidebar ── -->
-  <aside id="sidebar">
-    <div class="sidebar-logo">
-      <div class="sidebar-logo-mark">
-        <!-- Simple "L" monogram -->
-        <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-          <rect x="3" y="2" width="3" height="10"/>
-          <rect x="3" y="10" width="8" height="2.5"/>
-        </svg>
-      </div>
-      <div class="sidebar-logo-text">LM<span>Control</span></div>
-    </div>
-
-    <nav class="sidebar-nav">
-      <div class="nav-section-label">Navigation</div>
-
-      <div class="nav-item active" data-page="run">
-        <svg class="nav-item-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="3,2 13,8 3,14"/>
-        </svg>
-        Run Task
-      </div>
-
-      <div class="nav-item" data-page="settings">
-        <svg class="nav-item-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="8" cy="8" r="2.5"/>
-          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/>
-        </svg>
-        Settings
-      </div>
-    </nav>
-
-    <div class="sidebar-footer">
-      <div class="api-status-row">
-        <div class="status-dot checking" id="sidebar-status-dot"></div>
-        <span id="sidebar-status-label">Checking…</span>
-      </div>
-    </div>
-  </aside>
-
   <!-- ── Main ── -->
   <div id="main">
 
     <!-- Page header -->
     <header class="page-header">
-      <div>
-        <div class="page-title" id="page-header-title">Run Task</div>
-        <div class="page-subtitle" id="page-header-subtitle">Execute a task using the LMControl orchestrator</div>
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-text">K<span>odo</span></div>
+        <!-- <div class="page-title" id="page-header-title">Run Task</div> -->
+        <!-- <div class="page-subtitle" id="page-header-subtitle">Execute a task using the Kodo orchestrator</div> -->
+      </div>
+
+      <div style="display: flex; gap: 0.5rem;">
+        <div class="nav-item active" data-page="run">
+          <div>
+            <svg class="nav-item-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="3,2 13,8 3,14"/>
+            </svg>
+            Run Task
+          </div>
+        </div>
+
+        <div class="nav-item" data-page="settings">
+          <svg class="nav-item-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="8" cy="8" r="2.5"/>
+            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/>
+          </svg>
+          Settings
+        </div>
       </div>
     </header>
 
@@ -102,63 +82,78 @@
 
         <div class="two-col">
           <!-- Left: Task config -->
-          <div class="card">
-            <div class="card-header">
-              <div>
-                <div class="card-title">Task</div>
-                <div class="card-desc">Describe what you want LMControl to do.</div>
+          <div style="height: 100%;">
+            <div style="height: 100%;" class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Task</div>
+                  <div class="card-desc">Describe what you want Kodo to do.</div>
+                </div>
               </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: var(--sp-4);">
-              <label for="run-task-input">Task Description <span class="label-hint">Ctrl+Enter to run</span></label>
-              <textarea
-                id="run-task-input"
-                placeholder="e.g. Open Notepad and type Hello World, then save the file."
-                style="min-height: 120px;"
-              ></textarea>
-            </div>
-
-            <div class="form-group" style="margin-bottom: var(--sp-5);">
-              <label for="run-mode-select">Mode Override</label>
-              <select id="run-mode-select">
-                <option value="default">Default (use settings)</option>
-                <option value="planner">Planner</option>
-                <option value="autonomy">Autonomy</option>
-              </select>
-            </div>
-
-            <div style="display: flex; gap: var(--sp-3); align-items: center;">
-              <button id="run-start-btn" class="btn btn-primary">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                  <polygon points="2,1 10,6 2,11"/>
-                </svg>
-                Run
-              </button>
-              <button id="run-stop-btn" class="btn btn-danger" style="display: none;">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                  <rect x="2" y="2" width="8" height="8" rx="1"/>
-                </svg>
-                Stop
-              </button>
+  
+              <div class="form-group" style="margin-bottom: var(--sp-4);">
+                <label for="run-task-input">Task Description <span class="label-hint">Ctrl+Enter to run</span></label>
+                <textarea
+                  id="run-task-input"
+                  placeholder="e.g. Open Notepad and type Hello World, then save the file."
+                  style="min-height: 120px;"
+                ></textarea>
+              </div>
+  
+              <div class="form-group" style="margin-bottom: var(--sp-5);">
+                <label for="run-mode-select">Mode Override</label>
+                <select id="run-mode-select">
+                  <option value="default">Default (use settings)</option>
+                  <option value="planner">Planner</option>
+                  <option value="autonomy">Autonomy</option>
+                </select>
+              </div>
+  
+              <div style="display: flex; gap: var(--sp-3); align-items: center;">
+                <button id="run-start-btn" class="btn btn-primary">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                    <polygon points="2,1 10,6 2,11"/>
+                  </svg>
+                  Run
+                </button>
+                <button id="run-stop-btn" class="btn btn-danger" style="display: none;">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                    <rect x="2" y="2" width="8" height="8" rx="1"/>
+                  </svg>
+                  Stop
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- Right: Status -->
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title">Status</div>
-            </div>
-
-            <!-- Run status bar (hidden when idle) -->
-            <div id="run-status-bar" class="run-status-bar" style="display: none;">
-              <div id="run-spinner" class="run-spinner"></div>
-              <div id="run-status-dot" class="status-dot checking"></div>
-              <span id="run-status-text" class="text-sm">Running…</span>
-            </div>
-
-            <div style="margin-top: var(--sp-4); color: var(--text-muted); font-size: var(--text-sm);" id="run-idle-hint">
-              Start a run to see live status here.
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Status</div>
+              </div>
+  
+              <!-- Run status bar (hidden when idle) -->
+              <div id="run-status-bar" class="run-status-bar" style="display: none;">
+                <div id="run-spinner" class="run-spinner"></div>
+                <div id="run-status-dot" class="status-dot checking"></div>
+                <span id="run-status-text" class="text-sm">Running…</span>
+              </div>
+  
+              <div style="margin-top: var(--sp-4); color: var(--text-muted); font-size: var(--text-sm);" id="run-idle-hint">
+                Start a run to see live status here.
+              </div>
+  
+              <div style="margin-top: var(--sp-4);" class="card-header">
+                <div>
+                  <div class="card-title">Desktop Feed</div>
+                  <div class="card-desc">Live Desktop Feed Below <span style="margin-top: var(--sp-4); color: var(--text-muted); font-size: var(--text-sm);">(Refresh if the feed is not visible)</span></div>
+                </div>
+              </div>
+  
+              <div>
+                <img style="width: 100%;" src="/desktop-feed" alt="Desktop Feed">
+              </div>
             </div>
           </div>
         </div>
@@ -204,7 +199,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--sp-4);">
           <div style="display: flex; align-items: center; gap: var(--sp-4);">
             <button id="settings-load-btn" class="btn btn-secondary">Reload</button>
-            <button id="settings-save-btn" class="btn btn-primary">Save Settings</button>
+            <button id="settings-save-btn" class="btn btn-primary">Save Settings for this session</button>
           </div>
           <label style="display: flex; align-items: center; gap: var(--sp-3); cursor: pointer; font-size: var(--text-sm); color: var(--text-secondary);">
             <div class="toggle" style="margin-left: 0;">

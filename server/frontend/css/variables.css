@@ -1,51 +1,56 @@
 /* variables.css — all design tokens, edit here to retheme */
 
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap&family=JetBrains+Mono:wght@300;400;500&display=swap');
 
 :root {
   /* Palette */
-  --bg-void:       #07090c;
-  --bg-base:       #0c1016;
-  --bg-surface:    #101720;
-  --bg-elevated:   #151f2b;
-  --bg-overlay:    #1a2636;
+  --bg-void:        #0d0b0b; /* Deepest ink with a hint of warm slate */
+  --bg-base:        #141111; /* Dark base background */
+  --bg-surface:     #1c1818; /* Elevated surface for cards/panels */
+  --bg-elevated:    #241f1f; 
+  --bg-overlay:     #2d2727; 
 
-  --border-subtle:  #1a2535;
-  --border-default: #213045;
-  --border-strong:  #2a3f58;
+  --border-subtle:  #292222;
+  --border-default: #382f2f;
+  --border-strong:  #4a3f3f;
 
-  --amber:          #f59e0b;
-  --amber-bright:   #fbbf24;
-  --amber-dim:      #78350f;
-  --amber-glow:     rgba(245, 158, 11, 0.10);
-  --amber-glow-md:  rgba(245, 158, 11, 0.20);
+  /* Primary Accent: Pastel Red / Muted Coral */
+  --amber:          #f39890; /* Chalky pastel red, high visibility on dark */
+  --amber-bright:   #ffb2aa; /* Soft bright highlight red */
+  --amber-dim:      #3d211f; /* Deep, muted red-tinted background */
+  --amber-glow:     rgba(243, 152, 144, 0.10);
+  --amber-glow-md:  rgba(243, 152, 144, 0.20);
 
-  --green:          #10b981;
-  --green-dim:      #064e3b;
-  --green-glow:     rgba(16, 185, 129, 0.10);
+  /* Secondary: Pastel Green / Sage-Mint */
+  --green:          #a3d9c9; /* Soft, desaturated mint */
+  --green-dim:      #1f332d; /* Deep sage background */
+  --green-glow:     rgba(163, 217, 201, 0.10);
 
-  --red:            #f87171;
-  --red-dim:        #7f1d1d;
-  --red-glow:       rgba(248, 113, 113, 0.10);
+  /* Secondary: Pastel Crimson (For Errors/Alerts) */
+  --red:            #f7a1b5; /* Soft pastel rose-red */
+  --red-dim:        #3d1e25;
+  --red-glow:       rgba(247, 161, 181, 0.10);
 
-  --cyan:           #22d3ee;
-  --cyan-dim:       #164e63;
+  /* Secondary: Pastel Muted Blue / Lavender-Blue */
+  --cyan:           #a8cbf5; /* Soft desaturated ice blue */
+  --cyan-dim:       #212e3d;
 
-  --text-primary:   #dde6f0;
-  --text-secondary: #6e8faa;
-  --text-muted:     #3d5a73;
+  /* Typography (High contrast against dark backgrounds) */
+  --text-primary:   #f5eded; /* Soft off-white with a warm tint */
+  --text-secondary: #baaaaa; /* Muted stone gray with warm undertones */
+  --text-muted:     #6e6060; /* Darker warm gray for secondary text */
 
   /* Typography */
-  --font-ui:   'Syne', sans-serif;
+  --font-ui:   'Jost', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  --text-xs:   0.68rem;
-  --text-sm:   0.78rem;
-  --text-base: 0.88rem;
-  --text-md:   1rem;
-  --text-lg:   1.15rem;
-  --text-xl:   1.4rem;
-  --text-2xl:  2rem;
+  --text-xs:   0.88rem;
+  --text-sm:   0.98rem;
+  --text-base: 1.08rem;
+  --text-md:   1.3rem;
+  --text-lg:   1.6rem;
+  --text-xl:   2rem;
+  --text-2xl:  2.2rem;
 
   /* Spacing */
   --sp-1: 4px;  --sp-2: 8px;   --sp-3: 12px;
