@@ -1,6 +1,6 @@
 BIND_TO_ALL = True
-FRAME_RATE = 60
-PICTURE_QUALITY = 100
+FRAME_RATE = 30
+PICTURE_QUALITY = 90
 
 from log_stream import LogStream
 import asyncio
