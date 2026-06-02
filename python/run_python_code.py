@@ -6,7 +6,9 @@ import tempfile
 import venv
 import json
 
-VENV_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".lmcontrol_venv")
+from utils.globals import VENV_NAME
+
+VENV_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), VENV_NAME)
 
 from utils.logger import logger
 
