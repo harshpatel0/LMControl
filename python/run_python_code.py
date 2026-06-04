@@ -6,9 +6,11 @@ import tempfile
 import venv
 import json
 
-from utils.globals import VENV_NAME
+from utils.globals import PYTHON_RUNNER_VENV_NAME
 
-VENV_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), VENV_NAME)
+VENV_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)), PYTHON_RUNNER_VENV_NAME
+)
 
 from utils.logger import logger
 

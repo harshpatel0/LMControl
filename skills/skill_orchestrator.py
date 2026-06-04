@@ -4,12 +4,14 @@ import rootutils
 
 root = rootutils.setup_root(__file__, pythonpath=True)
 
-from utils.globals import VENV_NAME
+from utils.globals import PYTHON_RUNNER_VENV_NAME
 
 SKILLS_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(SKILLS_DIR)
 
-VENV_PYTHON = os.path.join(PROJECT_ROOT, VENV_NAME, "Scripts", "python.exe")
+VENV_PYTHON = os.path.join(
+    PROJECT_ROOT, PYTHON_RUNNER_VENV_NAME, "Scripts", "python.exe"
+)
 
 from python.run_python_code import PythonRunner
 from utils.logger import logger

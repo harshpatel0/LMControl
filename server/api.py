@@ -1,8 +1,12 @@
-BIND_TO_ALL = True
-FRAME_RATE = 30
-PICTURE_QUALITY = 90
+from utils.globals import (
+    API_BIND_TO_ALL_IPS,
+    API_DESKTOP_STREAMING_FRAME_RATE,
+    API_DESKTOP_STREAMING_PICTURE_QUALITY,
+    API_PORT,
+)
 
-from log_stream import LogStream
+
+from server.log_stream import LogStream
 import asyncio
 import rootutils
 import json
@@ -33,8 +37,6 @@ import ctypes
 import threading
 
 app = FastAPI()
-
-from pathlib import Path
 
 from pathlib import Path
 
@@ -149,7 +151,9 @@ def capture_desktop():
 
         img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
         success, jpeg_img = cv2.imencode(
-            ".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, PICTURE_QUALITY]
+            ".jpg",
+            img,
+            [cv2.IMWRITE_JPEG_QUALITY, API_DESKTOP_STREAMING_PICTURE_QUALITY],
         )
 
         if not success:
@@ -160,7 +164,7 @@ def capture_desktop():
             b"Content-Type: image/jpeg\r\n\r\n" + jpeg_img.tobytes() + b"\r\n"
         )
 
-        time.sleep(1 / FRAME_RATE)
+        time.sleep(1 / API_DESKTOP_STREAMING_FRAME_RATE)
 
 
 @app.get("/desktop-feed")
@@ -170,10 +174,10 @@ async def desktop_feed():
     )
 
 
-if __name__ == "__main__":
+def main():
     import uvicorn
 
-    if BIND_TO_ALL:
+    if API_BIND_TO_ALL_IPS:
         host = "0.0.0.0"
     else:
         host = "127.0.0.1"
@@ -181,7 +185,11 @@ if __name__ == "__main__":
     uvicorn.run(
         "api:app",
         host=host,
-        port=8000,
+        port=API_PORT,
         reload=True,
         reload_excludes=[".kodo_venv/*", ".lmcontrol_venv/*"],
     )
+
+
+if __name__ == "__main__":
+    main()
