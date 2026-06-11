@@ -7,6 +7,7 @@ from context_provider import UITreeHandler
 from skills.skill_orchestrator import Skills
 from models.provider import get_provider, ChatMessage, ChatResponse
 
+import utils.utils as utils
 import utils.strings as Strings
 from utils.logger import logger
 
@@ -76,7 +77,6 @@ class SkillInstallationMode:
         )
 
         raw_content = response.content if response else ""
-        import utils.utils as utils
         skills_data, _ = utils.try_parse_json(raw_content) if raw_content else ({}, None)
         skills_data = skills_data or {}
         skills = skills_data.get("skills", [])

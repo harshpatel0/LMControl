@@ -24,23 +24,15 @@ def try_parse_json(raw: str):
     if not cleaned:
         return None, "Empty response"
 
-    try:
-        return json.loads(cleaned), None
-    except json.JSONDecodeError as e:
-        pass
+    last_error = None
+    for strategy in (
+        lambda s: s,
+        lambda s: re.sub(r",\s*([}\]])", r"\1", s),
+        lambda s: re.sub(r"(?<!\\)\b(null|true|false)\b", lambda m: m.group(1).lower(), s),
+    ):
+        try:
+            return json.loads(strategy(cleaned)), None
+        except json.JSONDecodeError as e:
+            last_error = e
 
-    cleaned = re.sub(r",\s*([}\]])", r"\1", cleaned)
-    try:
-        return json.loads(cleaned), None
-    except json.JSONDecodeError:
-        pass
-
-    cleaned = re.sub(
-        r"(?<!\\)\b(null|true|false)\b", lambda m: m.group(1).lower(), cleaned
-    )
-    try:
-        return json.loads(cleaned), None
-    except json.JSONDecodeError:
-        pass
-
-    return None, f"Could not parse JSON: {e}"
+    return None, f"Could not parse JSON: {last_error}"

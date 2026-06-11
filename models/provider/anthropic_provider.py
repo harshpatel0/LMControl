@@ -5,8 +5,13 @@ from utils.logger import logger
 
 
 class AnthropicProvider(ModelProvider):
+    """Provider for Anthropic's Claude models. Uses anthropic Python SDK.
+    Reads API key from environment variable at init time.
+    """
+
     def __init__(self, api_key_env_var: str = "ANTHROPIC_API_KEY", base_url: str | None = None):
-        import anthropic
+        import anthropic as _anthropic
+
         api_key = os.environ.get(api_key_env_var)
         if not api_key:
             raise ValueError(
@@ -16,7 +21,7 @@ class AnthropicProvider(ModelProvider):
         kwargs = {"api_key": api_key}
         if base_url:
             kwargs["base_url"] = base_url
-        self.client = anthropic.Anthropic(**kwargs)
+        self._client = _anthropic.Anthropic(**kwargs)
 
     def chat(
         self,
@@ -26,7 +31,7 @@ class AnthropicProvider(ModelProvider):
         max_tokens: int | None = None,
         **kwargs,
     ) -> ChatResponse:
-        import anthropic
+        import anthropic as _anthropic
 
         system_prompt = None
         api_messages = []
@@ -61,8 +66,8 @@ class AnthropicProvider(ModelProvider):
             call_kwargs["system"] = system_prompt
 
         try:
-            response = self.client.messages.create(**call_kwargs)
-        except anthropic.APIError as e:
+            response = self._client.messages.create(**call_kwargs)
+        except _anthropic.APIError as e:
             logger.error(f"Anthropic API error: {e}")
             raise
 

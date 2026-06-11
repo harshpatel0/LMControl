@@ -1,13 +1,18 @@
 import os
 import io
+import base64
 
 from .base import ModelProvider, ChatMessage, ChatResponse
-from utils.logger import logger
 
 
 class GoogleProvider(ModelProvider):
+    """Provider for Google Gemini models. Uses google-generativeai SDK.
+    Reads API key from environment variable at init time.
+    """
+
     def __init__(self, api_key_env_var: str = "GOOGLE_API_KEY"):
         import google.generativeai as genai
+
         api_key = os.environ.get(api_key_env_var)
         if not api_key:
             raise ValueError(
@@ -25,6 +30,8 @@ class GoogleProvider(ModelProvider):
         max_tokens: int | None = None,
         **kwargs,
     ) -> ChatResponse:
+        from PIL import Image
+
         genai = self._genai
 
         system_prompt = None
@@ -35,8 +42,6 @@ class GoogleProvider(ModelProvider):
             if msg.content:
                 parts.append(msg.content)
             if msg.images:
-                import base64
-                from PIL import Image
                 for img_b64 in msg.images:
                     image_bytes = base64.b64decode(img_b64)
                     parts.append(Image.open(io.BytesIO(image_bytes)))
@@ -51,7 +56,7 @@ class GoogleProvider(ModelProvider):
         if max_tokens:
             generation_config["max_output_tokens"] = max_tokens
 
-        model_instance = self._genai.GenerativeModel(
+        model_instance = genai.GenerativeModel(
             model_name=model,
             generation_config=generation_config,
             system_instruction=system_prompt,

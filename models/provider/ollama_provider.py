@@ -8,6 +8,8 @@ from utils.loading_text import get_loading_text
 
 
 class OllamaProvider(ModelProvider):
+    """Provider for locally-hosted Ollama models. Connects via ollama Python SDK."""
+
     def __init__(self, server_url: str = "localhost:11434", timeout: int = 120):
         self.server_url = server_url
         self.timeout = timeout
@@ -83,4 +85,6 @@ class OllamaProvider(ModelProvider):
                 logger.info(f"Retrying in {sleep_time:.1f}s...")
                 time.sleep(sleep_time)
 
-        raise last_error or ConnectionError(f"Failed to reach Ollama at {self.server_url}")
+        raise last_error or ConnectionError(
+            f"Failed to reach Ollama at {self.server_url} after 3 attempts"
+        )
