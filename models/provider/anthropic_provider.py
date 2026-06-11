@@ -2,6 +2,7 @@ import os
 
 from .base import ModelProvider, ChatMessage, ChatResponse
 from utils.logger import logger
+import anthropic as _anthropic
 
 
 class AnthropicProvider(ModelProvider):
@@ -9,8 +10,9 @@ class AnthropicProvider(ModelProvider):
     Reads API key from environment variable at init time.
     """
 
-    def __init__(self, api_key_env_var: str = "ANTHROPIC_API_KEY", base_url: str | None = None):
-        import anthropic as _anthropic
+    def __init__(
+        self, api_key_env_var: str = "ANTHROPIC_API_KEY", base_url: str | None = None
+    ):
 
         api_key = os.environ.get(api_key_env_var)
         if not api_key:
@@ -31,7 +33,6 @@ class AnthropicProvider(ModelProvider):
         max_tokens: int | None = None,
         **kwargs,
     ) -> ChatResponse:
-        import anthropic as _anthropic
 
         system_prompt = None
         api_messages = []
@@ -46,14 +47,16 @@ class AnthropicProvider(ModelProvider):
                 content.append({"type": "text", "text": msg.content})
             if msg.images:
                 for img_b64 in msg.images:
-                    content.append({
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/jpeg",
-                            "data": img_b64,
-                        },
-                    })
+                    content.append(
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": img_b64,
+                            },
+                        }
+                    )
             api_messages.append({"role": role, "content": content})
 
         call_kwargs = {

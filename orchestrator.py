@@ -67,11 +67,12 @@ class ActionHandlers:
         )
         # Include diagnostic info: the last action attempted and its result.
         last_action = self.orchestrator.step_result.get("action", "unknown")
-        last_args = {k: v for k, v in self.orchestrator.step_result.items() if k != "action"}
+        last_args = {
+            k: v for k, v in self.orchestrator.step_result.items() if k != "action"
+        }
         self.orchestrator.additional_context = (
             f"[DIAGNOSTIC] Last action was '{last_action}' with args: {json.dumps(last_args)}.\n"
-            f"{self.orchestrator.step_result.get('message', '')}"
-            + "\n"
+            f"{self.orchestrator.step_result.get('message', '')}" + "\n"
         )
         return "CONTINUE"
 
@@ -82,7 +83,11 @@ class ActionHandlers:
         # Normalize replan entries by lowercasing and stripping whitespace
         # so minor wording differences don't mask a real loop.
         normalized = [a.strip().lower() for a in self.orchestrator.replan_history]
-        tail = normalized[-MAX_REPLAN_LOOP:] if len(normalized) >= MAX_REPLAN_LOOP else normalized
+        tail = (
+            normalized[-MAX_REPLAN_LOOP:]
+            if len(normalized) >= MAX_REPLAN_LOOP
+            else normalized
+        )
 
         if len(tail) == MAX_REPLAN_LOOP and len(set(tail)) == 1:
             logger.critical(
@@ -263,7 +268,7 @@ class StepOrchestrator:
                     break
 
                 last_action_info = ""
-                if getattr(self, 'step_result', {}) and self.step_result.get("action"):
+                if getattr(self, "step_result", {}) and self.step_result.get("action"):
                     last_action_info = (
                         f"[LAST ACTION] action='{self.step_result['action']}' "
                         f"args={{{', '.join(f'{k}={v!r}' for k, v in self.step_result.items() if k != 'action')}}}\n"
@@ -392,7 +397,7 @@ Available Skill Actions:
                     self.hard_exit = True
 
             last_action_info = ""
-            if getattr(self, 'step_result', {}) and self.step_result.get("action"):
+            if getattr(self, "step_result", {}) and self.step_result.get("action"):
                 last_action_info = (
                     f"[LAST ACTION] action='{self.step_result['action']}' "
                     f"args={{{', '.join(f'{k}={v!r}' for k, v in self.step_result.items() if k != 'action')}}}\n"
@@ -495,7 +500,9 @@ Output of Iteration: {self.iterations}
 
                 # Guard against the actor repeating the same action — if the last
                 # two actions are identical the actor is likely stuck in a loop.
-                if self.last_action is not None and self.step_result.get("action") == self.last_action.get("action"):
+                if self.last_action is not None and self.step_result.get(
+                    "action"
+                ) == self.last_action.get("action"):
                     # Allow one retry with the same action before bailing
                     if getattr(self, "_same_action_count", 0) == 0:
                         self._same_action_count = 1
@@ -538,5 +545,5 @@ def run_externally(task: str, mode_override: str | None = None):
 
 
 if __name__ == "__main__":
-    task = "Display a Windows Toast Notification saying Hello World"
+    task = "Open Notepad, type 'Hello from Gemini', save the file to the Desktop as gemini_test.txt."
     run_externally(task=task)
