@@ -1,18 +1,34 @@
 default_settings = {
+    "active_model_provider": "ollama",
+    "model_providers": {
+        "ollama": {
+            "server_url": "localhost:11434",
+            "timeout": 120,
+        },
+        "anthropic": {
+            "api_key_env_var": "ANTHROPIC_API_KEY",
+            "base_url": None,
+        },
+        "google": {
+            "api_key_env_var": "GOOGLE_API_KEY",
+        },
+    },
     "models": {
-        "ollama_server": "localhost:11434",
         "skill_installation": {
+            "provider": "ollama",
             "model_name": "gemma4:e4b",
             "temperature": 0.1,
             "keep_alive": 0,
         },
         "planner": {
+            "provider": "ollama",
             "model_name": "gemma4:e4b",
             "thinking": True,
             "temperature": 0.7,
             "keep_alive": 0,
         },
         "actor": {
+            "provider": "ollama",
             "model_name": "gemma4:e4b",
             "thinking": True,
             "temperature": 0.3,
@@ -20,6 +36,7 @@ default_settings = {
             "attach_screenshot_of_active_window": False,
         },
         "autonomy_actor": {
+            "provider": "ollama",
             "model_name": "gemma4:e4b",
             "thinking": True,
             "temperature": 0.5,

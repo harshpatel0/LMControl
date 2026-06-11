@@ -5,206 +5,39 @@ root = rootutils.setup_root(__file__, pythonpath=True)
 from context_provider import ContextProvider
 from context_provider import UITreeHandler
 from skills.skill_orchestrator import Skills
-import ollama
-import json
-import time
-import random
+from models.provider import get_provider, ChatMessage, ChatResponse
 
 import utils.strings as Strings
 from utils.logger import logger
-from utils.loading_text import get_loading_text
-
-from utils.globals import (
-    MODEL_DEFINITIONS_DEBUG_OLLAMA_REQUESTS_TO_FILE,
-    MODEL_DEFINITIONS_ENABLE_DEBUG_OLLAMA_REQUESTS,
-)
 
 from settings.settings import settings
 
 skill_orchestrator = Skills()
 
-OUTPUT_FORMAT = "json"
-
 context_provider = ContextProvider()
 ui_tree_handler = UITreeHandler()
 
 
-if settings.orchestrator.use_experimental_autonomy_mode:
-    ACTOR_MODEL_NAME = settings.models.autonomy_actor.model_name
-    ACTOR_MODEL_TEMPERATURE = settings.models.autonomy_actor.temperature
-    ACTOR_MODEL_KEEP_ALIVE = settings.models.autonomy_actor.keep_alive
-    ACTOR_MODEL_THINKING = settings.models.autonomy_actor.thinking
-    ACTOR_MODEL_ATTACH_SCREENSHOT = (
-        settings.models.autonomy_actor.attach_screenshot_of_active_window
-    )
-
-    ACTOR_SYSTEM_PROMPT = Strings.AUTONOMY_MODE_SYSTEM_PROMPT
-    USING_AUTONOMY_MODE = True
-else:
-    ACTOR_MODEL_NAME = settings.models.actor.model_name
-    ACTOR_MODEL_TEMPERATURE = settings.models.actor.temperature
-    ACTOR_MODEL_KEEP_ALIVE = settings.models.actor.keep_alive
-    ACTOR_MODEL_THINKING = settings.models.actor.thinking
-    ACTOR_MODEL_ATTACH_SCREENSHOT = (
-        settings.models.actor.attach_screenshot_of_active_window
-    )
-
-    ACTOR_SYSTEM_PROMPT = Strings.ACTOR_BASE_SYSTEM_PROMPT
-    USING_AUTONOMY_MODE = False
+USING_AUTONOMY_MODE = settings.orchestrator.use_experimental_autonomy_mode
 
 
-class OllamaError(Exception):
-    pass
+def _get_actor_config():
+    if USING_AUTONOMY_MODE:
+        return settings.models.autonomy_actor
+    return settings.models.actor
 
 
-class OllamaConnectionError(OllamaError):
-    pass
-
-
-class OllamaRequestError(OllamaError):
-    pass
-
-
-def make_ollama_request(
-    client,
-    model_name: str,
-    messages: list,
-    temperature: float,
-    keep_alive: bool,
-    output_format=OUTPUT_FORMAT,
-    max_retries: int = 3,
-    request_timeout: int = 120,
-):
-    """Makes a request to the Ollama client with retry+backoff.
-    Raises OllamaError on persistent failure instead of killing the process.
-    """
-    last_error = None
-
-    for attempt in range(max_retries):
-        try:
-            logger.debug(messages)
-            print(messages)
-            logger.info(get_loading_text())
-
-            response_object = client.chat(
-                model=model_name,
-                messages=messages,
-                options={"temperature": temperature},
-                keep_alive=keep_alive,
-                format=output_format,
-            )
-
-            if response_object and hasattr(response_object, "message"):
-                response_object.message.content = response_object.message.content.strip()
-
-            logger.debug(f"Ollama response: {response_object.model_dump()}")
-            response_dict = response_object.model_dump()
-
-            if MODEL_DEFINITIONS_ENABLE_DEBUG_OLLAMA_REQUESTS:
-                _write_debug_log(messages, response_dict)
-
-            return response_object
-
-        except KeyboardInterrupt:
-            logger.warning("CTRL+C pressed, interrupting request and exiting")
-            raise
-
-        except ConnectionError as e:
-            last_error = OllamaConnectionError(
-                f"Failed to connect to Ollama server at {settings.models.ollama_server}: {e}"
-            )
-            logger.warning(
-                f"Connection error (attempt {attempt+1}/{max_retries}): {e}"
-            )
-
-        except ollama.ResponseError as e:
-            last_error = OllamaRequestError(
-                f"Ollama API error (HTTP {e.status_code}) for model '{model_name}': {e.error}"
-            )
-            logger.warning(
-                f"Ollama API error (attempt {attempt+1}/{max_retries}): HTTP {e.status_code}"
-            )
-            if e.status_code == 400:
-                logger.error("Bad request — likely context overflow or invalid format.")
-                raise last_error
-
-        except ollama.RequestError as e:
-            last_error = OllamaRequestError(
-                f"Bad request to Ollama for model '{model_name}': {e.error}"
-            )
-            logger.warning(
-                f"Ollama request error (attempt {attempt+1}/{max_retries}): {e}"
-            )
-
-        except Exception as e:
-            last_error = OllamaError(
-                f"Unexpected error during Ollama request for model '{model_name}': {str(e)}"
-            )
-            logger.warning(
-                f"Unexpected error (attempt {attempt+1}/{max_retries}): {e}"
-            )
-
-        if attempt < max_retries - 1:
-            sleep_time = (2 ** attempt) + random.uniform(0, 1)
-            logger.info(f"Retrying in {sleep_time:.1f}s...")
-            time.sleep(sleep_time)
-
-    raise last_error
-
-
-def _write_debug_log(messages, response_dict):
-    total_duration = int(response_dict.get("total_duration", 0)) / 1_000_000_000
-    load_duration = int(response_dict.get("load_duration", 0)) / 1_000_000_000
-    prompt_eval_duration = (
-        int(response_dict.get("prompt_eval_duration", 0)) / 1_000_000_000
-    )
-    eval_duration = int(response_dict.get("eval_duration", 0)) / 1_000_000_000
-    generated_tokens = int(response_dict.get("eval_count", 0))
-    input_tokens = int(response_dict.get("prompt_eval_count", 0))
-    token_speed = generated_tokens / eval_duration if eval_duration > 0 else 0
-
-    with open(
-        MODEL_DEFINITIONS_DEBUG_OLLAMA_REQUESTS_TO_FILE, "a", encoding="utf-8"
-    ) as file:
-        string = f"""
-{'=' * 20}
-Model Messages
-    Statistics
-        Total Duration: {total_duration}
-            Load Duration: {load_duration}
-            Prompt Evaluation Duration: {prompt_eval_duration}
-            Evaluation Duration: {eval_duration}
-        
-        Input Tokens: {input_tokens}
-        Generated Tokens: {generated_tokens}
-        Token Speed: {token_speed}
-
-    Input
-        System Prompt
-            {messages[0]["content"]}
-
-        User Prompt
-            {messages[1]["content"]}
-
-    Output
-        Response Content
-            {response_dict["message"]["content"]}
-
-        Extracted Conent Thinking Response
-            {response_dict["message"].get("thinking")}
-{'=' * 20}
-"""
-        file.write(string)
-        print(string)
+def _get_actor_system_prompt():
+    if USING_AUTONOMY_MODE:
+        return Strings.AUTONOMY_MODE_SYSTEM_PROMPT
+    return Strings.ACTOR_BASE_SYSTEM_PROMPT
 
 
 def estimate_tokens(text: str) -> int:
-    """Rough token estimate (~4 chars per token for most models)."""
     return len(text) // 4
 
 
 def truncate_to_token_limit(text: str, max_tokens: int) -> str:
-    """Truncate text to stay within a rough token budget."""
     if estimate_tokens(text) <= max_tokens:
         return text
     max_chars = max_tokens * 4
@@ -213,7 +46,7 @@ def truncate_to_token_limit(text: str, max_tokens: int) -> str:
 
 class SkillInstallationMode:
     def __init__(self):
-        self.client = ollama.Client(host=settings.models.ollama_server)
+        pass
 
     def get_installed_skills(self):
         return skill_orchestrator.loaded_skills
@@ -226,21 +59,23 @@ class SkillInstallationMode:
         user_prompt = f"Commence skill installation mode. Return a list of skills to install as per required output scheme that you might need to complete this task: {task}"
 
         messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
+            ChatMessage(role="system", content=system_prompt),
+            ChatMessage(role="user", content=user_prompt),
         ]
 
         logger.info("Resolving skill issues")
 
-        response_obj = make_ollama_request(
-            client=self.client,
-            model_name=settings.models.skill_installation.model_name,
+        cfg = settings.models.skill_installation
+        provider = get_provider(cfg)
+        response = provider.chat(
             messages=messages,
-            temperature=settings.models.skill_installation.temperature,
-            keep_alive=settings.models.skill_installation.keep_alive,
+            model=cfg.model_name,
+            temperature=cfg.temperature,
+            keep_alive=getattr(cfg, "keep_alive", 0),
+            output_format="json",
         )
 
-        raw_content = response_obj.message.content if response_obj else ""
+        raw_content = response.content if response else ""
         import utils.utils as utils
         skills_data, _ = utils.try_parse_json(raw_content) if raw_content else ({}, None)
         skills_data = skills_data or {}
@@ -274,7 +109,7 @@ class PlannerModel:
     system_prompt = Strings.PLANNER_BASE_SYSTEM_PROMPT
 
     def __init__(self):
-        self.client = ollama.Client(host=settings.models.ollama_server)
+        pass
 
     def run(self, task, skills=None):
         user_prompt = f"""
@@ -308,30 +143,29 @@ Treat skill actions as first-class actions alongside the standard ones above.
 {skills}
 """
         messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
+            ChatMessage(role="system", content=system_prompt),
+            ChatMessage(role="user", content=user_prompt),
         ]
 
-        response_obj = make_ollama_request(
-            client=self.client,
-            model_name=settings.models.planner.model_name,
+        cfg = settings.models.planner
+        provider = get_provider(cfg)
+        response = provider.chat(
             messages=messages,
-            temperature=settings.models.planner.temperature,
-            keep_alive=settings.models.planner.keep_alive,
+            model=cfg.model_name,
+            temperature=cfg.temperature,
+            keep_alive=getattr(cfg, "keep_alive", 0),
+            output_format="json",
         )
 
-        thinking_content = getattr(response_obj.message, "thinking", None) or getattr(
-            response_obj.message, "reasoning", None
-        )
-        if thinking_content:
-            logger.info(f"Thinking: {thinking_content.strip()}")
+        if response.thinking:
+            logger.info(f"Thinking: {response.thinking.strip()}")
 
-        return response_obj.message.content if response_obj else ""
+        return response.content
 
 
 class ActorModel:
     def build_system_prompt_with_skills(self, skills=None):
-        active_system_prompt = ACTOR_SYSTEM_PROMPT
+        active_system_prompt = _get_actor_system_prompt()
 
         if not skills:
             return active_system_prompt
@@ -377,13 +211,17 @@ Taskbar Elements
         return user_prompt
 
     def __init__(self):
-        self.client = ollama.Client(host=settings.models.ollama_server)
+        pass
 
     def run(self, user_prompt, skills=None):
-        user_message = {"role": "user", "content": user_prompt}
+        cfg = _get_actor_config()
+        attach_screenshot = getattr(cfg, "attach_screenshot_of_active_window", False)
+        thinking_enabled = getattr(cfg, "thinking", False)
 
-        if ACTOR_MODEL_ATTACH_SCREENSHOT:
-            user_message["images"] = [
+        user_message = ChatMessage(role="user", content=user_prompt)
+
+        if attach_screenshot:
+            user_message.images = [
                 context_provider.get_screenshot(
                     window_title=context_provider.get_active_window()
                 )
@@ -391,29 +229,29 @@ Taskbar Elements
 
         system_prompt = ""
 
-        if ACTOR_MODEL_THINKING:
+        if thinking_enabled:
             system_prompt = system_prompt + "<|think|>"
 
         system_prompt = system_prompt + self.build_system_prompt_with_skills(skills)
 
-        messages = [{"role": "system", "content": system_prompt}, user_message]
+        messages = [
+            ChatMessage(role="system", content=system_prompt),
+            user_message,
+        ]
 
-        response_obj = make_ollama_request(
-            client=self.client,
-            model_name=ACTOR_MODEL_NAME,
+        provider = get_provider(cfg)
+        response = provider.chat(
             messages=messages,
-            temperature=ACTOR_MODEL_TEMPERATURE,
-            keep_alive=ACTOR_MODEL_KEEP_ALIVE,
+            model=cfg.model_name,
+            temperature=cfg.temperature,
+            keep_alive=getattr(cfg, "keep_alive", 0),
+            output_format="json",
         )
 
-        thinking_content = getattr(response_obj.message, "thinking", None) or getattr(
-            response_obj.message, "reasoning", None
-        )
+        if response.thinking:
+            logger.info(f"Thinking: {response.thinking.strip()}")
 
-        if thinking_content:
-            logger.info(f"Thinking: {thinking_content.strip()}")
-
-        content_text = response_obj.message.content if response_obj else ""
+        content_text = response.content
 
         if not content_text:
             logger.warning(

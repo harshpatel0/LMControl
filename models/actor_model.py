@@ -1,6 +1,6 @@
 import json
 
-from models.ollama.model_definitions import ActorModel, make_ollama_request
+from models.ollama.model_definitions import ActorModel
 from context_provider import ContextProvider
 
 import utils.utils as utils
