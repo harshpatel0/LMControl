@@ -3,6 +3,16 @@ import os
 from .base import ModelProvider, ChatMessage, ChatResponse
 from utils.logger import logger
 import anthropic as _anthropic
+from settings.settings import settings
+
+DO_THINKING = False
+
+if settings.orchestrator.use_experimental_autonomy_mode:
+    if settings.models.autonomy_actor.thinking:
+        DO_THINKING = True
+else:
+    if settings.models.actor.thinking:
+        DO_THINKING = True
 
 
 class AnthropicProvider(ModelProvider):
@@ -65,8 +75,17 @@ class AnthropicProvider(ModelProvider):
             "temperature": temperature,
             "max_tokens": max_tokens or 4096,
         }
+
         if system_prompt:
             call_kwargs["system"] = system_prompt
+        if DO_THINKING:
+            call_kwargs["thinking"] = {"type": "adaptive"}
+            call_kwargs["temperature"] = (
+                1.0  # Enabling Thinking forces temperature to 1.0
+            )
+            call_kwargs["max_tokens"] = 16384
+        if settings.model_providers.effort:
+            call_kwargs["output_config"] = {"effort": settings.model_providers.effort}
 
         try:
             response = self._client.messages.create(**call_kwargs)
