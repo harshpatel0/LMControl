@@ -24,6 +24,23 @@ You can mix providers arbitrarily, each role resolves its own provider independe
 
 ---
 
+## Disclaimer
+
+By using an external provider, you agree to their terms of service.
+
+By providers, I mean any external provders, local providers, providers I included support for in the app, and the Ollama local provider.
+
+I am not responsible for the data that these providers receive, and process in the app. 
+I am not responsible if the data that the app has provided to their AI model.
+I am not responsible for your data being used for training, data collection, or human review. You should have read their terms of service.
+
+I am not responsible, legally, or financially, or any other aspect, when you use the app.
+
+By using this app, you are aware that this is in development, and may cause an excessive charge on your account.
+By using the Gemini AI provider in its free plan, you clearly understand that according to their Terms of Service. **YOUR DATA WILL BE COLLECTED, TRAINED ON, AND HUMAN REVIEWED ACCORDING TO THEIR GUIDELINES. I AM NOT RESPONSIBLE FOR THIS. PLEASE BE CAREFUL WITH WHAT THE ORCHESTRATORS AND CONTEXT PROVIDERS COLLECT ABOUT YOUR PC**
+
+That said, I am not personally collecting your PC information, the data collected is sent to the model, and that's it.
+
 ## Configuring Each Provider
 
 ### Ollama (local models)
@@ -116,6 +133,12 @@ Then configure:
   }
 }
 ```
+
+#### Warning
+
+Google has said they will use model requests made on the Free Tier to train their models, including human review. Please do not send sensitive data, absolutely no data masking occurs when it is sent to Google, Google will see your active window, a screenshot of your desktop, and your taskbar. If you can't trust an outside provider. Please use Ollama.
+
+The project is still in development, uses a lot of input tokens and requires reasoning, this is all intensive for your model, and so, you would be billed accordingly if using a paid plan.
 
 ---
 
