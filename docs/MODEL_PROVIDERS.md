@@ -1,6 +1,6 @@
-# Model Providers — Choosing, Configuring, and Using
+# Model Providers - Choosing, Configuring, and Using
 
-LMControl supports multiple model backends via a pluggable provider abstraction.
+Kodo supports multiple model backends via a pluggable provider abstraction.
 Each of the four model roles (`skill_installation`, `planner`, `actor`, `autonomy_actor`)
 can use a **different provider** independently.
 
@@ -20,7 +20,7 @@ Set the `provider` field on each model role in `settings.json`:
 }
 ```
 
-You can mix providers arbitrarily — each role resolves its own provider independently at call time.
+You can mix providers arbitrarily, each role resolves its own provider independently at call time.
 
 ---
 
@@ -61,6 +61,9 @@ Set the environment variable first:
 set ANTHROPIC_API_KEY=sk-ant-...
 ```
 
+You can also set the corresponding key and its value in a .env file, this will be picked up without needing to set the environment variable.
+Ensure your .env file stays hidden, unless you're feeling very generious.
+
 Then configure:
 
 ```json
@@ -91,6 +94,9 @@ Set the environment variable first:
 ```bash
 set GOOGLE_API_KEY=AIza...
 ```
+
+You can also set the corresponding key and its value in a .env file, this will be picked up without needing to set the environment variable.
+Ensure your .env file stays hidden, unless you're feeling very generious.
 
 Then configure:
 
