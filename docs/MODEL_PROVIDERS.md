@@ -37,7 +37,7 @@ I am not responsible for your data being used for training, data collection, or 
 I am not responsible, legally, or financially, or any other aspect, when you use the app.
 
 By using this app, you are aware that this is in development, and may cause an excessive charge on your account.
-By using the Gemini AI provider in its free plan, you clearly understand that according to their Terms of Service. **YOUR DATA WILL BE COLLECTED, TRAINED ON, AND HUMAN REVIEWED ACCORDING TO THEIR GUIDELINES. I AM NOT RESPONSIBLE FOR THIS. PLEASE BE CAREFUL WITH WHAT THE ORCHESTRATORS AND CONTEXT PROVIDERS COLLECT ABOUT YOUR PC**
+By using the Gemini AI provider in its free plan, you clearly understand that according to their Terms of Service: **YOUR DATA WILL BE COLLECTED, TRAINED ON, AND HUMAN REVIEWED ACCORDING TO THEIR GUIDELINES. I AM NOT RESPONSIBLE FOR THIS. PLEASE BE CAREFUL WITH WHAT THE ORCHESTRATORS AND CONTEXT PROVIDERS COLLECT ABOUT YOUR PC**
 
 That said, I am not personally collecting your PC information, the data collected is sent to the model, and that's it.
 
