@@ -1,0 +1,7 @@
+{
+  "name": "filesystem",
+  "description": "Create, read, write, append, open (present), and delete files on the local filesystem",
+  "actions": ["create_file", "write_to_file", "read_file", "append_file", "present_file", "delete_file"],
+  "entry": "skill.py",
+  "dependencies": []
+}
