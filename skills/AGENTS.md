@@ -138,10 +138,8 @@ The Orchestrator strips the `"action"` key before invoking the entry point. By t
 `sys.argv[1]` arrives at the script, it contains **only the parameters** for that action
 — there is no `"action"` key to read.
 
-```
+``` cmd
 Actor emits:  {"action": "send_toast", "title": "Done", "body": "Task complete"}
-                         ↓ Orchestrator strips "action"
-sys.argv[1]:  {"title": "Done", "body": "Task complete"}
 ```
 
 **Single action (simple case):**
@@ -201,27 +199,25 @@ def delete_file(path):
 if __name__ == "__main__":
     args = json.loads(sys.argv[1])
 
-    # Route by which parameters are present — "action" is NOT in args
-    if "content" in args:
-        write_file(args["path"], args["content"])
-    elif "path" in args:
-        # Both read_file and delete_file only receive "path".
-        # Use an additional discriminator param to tell them apart.
-        # Here we use "delete" as an explicit flag.
-        if args.get("delete"):
-            delete_file(args["path"])
-        else:
-            read_file(args["path"])
-    else:
-        print("Unknown action: unrecognised parameter set", file=sys.stderr)
-        sys.exit(1)
+    # Route by which action was brought in
+
+    if args.get("action") == "delete_file":
+      delete_file(args.get("path"))
+
+    # and so on
 ```
 
-**Design rule for multi-action skills:** give each action at least one parameter name
-that is unique to it, or include a short discriminator param (e.g. `"mode"`, `"delete"`,
-`"operation"`) so the entry point can route without ambiguity. Document this in
-`actor_skill.md` so the Actor knows to include it.
+Here is a base file to start from, it is enough to get a parameter and do something
 
+``` py
+import json
+import sys
+
+if __name__ == "__main__":
+    args = json.loads(sys.argv[1])
+```
+
+> If the skill has a single registered action, you can safely ignore the action parameter.
 ---
 
 ### Type 3 — Dynamic Context
