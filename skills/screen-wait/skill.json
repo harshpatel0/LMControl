@@ -1,0 +1,8 @@
+{
+    "name": "screen-wait",
+    "description": "Wait for a named UI element or window title to appear before proceeding. Use when an application loads slowly, a dialog is expected but not yet visible, or the agent needs to pause until a specific UI state is reached before acting.",
+    "actions": ["wait_for_element", "wait_for_window"],
+    "entry": "skill.py",
+    "enabled": true,
+    "dependencies": ["pywinauto", "pygetwindow"]
+}
