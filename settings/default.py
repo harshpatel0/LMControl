@@ -58,4 +58,7 @@ default_settings = {
         },
     },
     "context_provider": {"waiting_period": 4, "skip_after_ticks": 10},
+    "skills": {
+        "skill_timeout": 0,
+    },
 }

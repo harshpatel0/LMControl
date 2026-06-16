@@ -13,6 +13,7 @@ VENV_DIR = os.path.join(
 )
 
 from utils.logger import logger
+from settings.settings import settings
 
 
 class PythonRunner:
@@ -101,7 +102,17 @@ class PythonRunner:
 
         return None
 
-    def execute_code(self, command, timeout=15):
+    def _get_timeout(self):
+        st = getattr(settings, "skills", None)
+        if st is not None:
+            val = getattr(st, "skill_timeout", None)
+            if val is not None and val > 0:
+                return val
+        return None
+
+    def execute_code(self, command, timeout=None):
+        if timeout is None:
+            timeout = self._get_timeout()
         try:
             result = subprocess.run(
                 command, capture_output=True, text=True, timeout=timeout
@@ -171,8 +182,10 @@ class PythonRunner:
             imports.add(match.group(1).split(".")[0])
         return imports
 
-    def run(self, code, timeout=15):
+    def run(self, code, timeout=None):
         logger.info(f"Running Python code\n{code}")
+        if timeout is None:
+            timeout = self._get_timeout()
 
         # Write code to temp file first
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -193,7 +206,7 @@ class PythonRunner:
 
         # Run the temp file, actual Python errors come through clearly here
         command = [self.venv_python, temp_path]
-        execution_result = self.execute_code(command=command)
+        execution_result = self.execute_code(command=command, timeout=timeout)
         os.unlink(temp_path)
 
         return execution_result
