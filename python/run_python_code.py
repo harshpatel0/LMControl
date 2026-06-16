@@ -158,19 +158,41 @@ class PythonRunner:
 
         return execution_result["stdout"]
 
+    def _extract_imports_fallback(self, code):
+        """Regex-based import extraction when ast.parse fails."""
+        import re
+
+        imports = set()
+        imports.add("setuptools")
+        imports.add("wheel")
+        for match in re.finditer(r"^\s*import\s+(\w+)", code, re.MULTILINE):
+            imports.add(match.group(1).split(".")[0])
+        for match in re.finditer(r"^\s*from\s+(\w+)", code, re.MULTILINE):
+            imports.add(match.group(1).split(".")[0])
+        return imports
+
     def run(self, code, timeout=15):
         logger.info(f"Running Python code\n{code}")
-        preparation_result = self.prepare_environment(code=code)
 
-        if preparation_result:
-            return preparation_result
-
+        # Write code to temp file first
         with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             temp_path = f.name
 
-        command = [self.venv_python, temp_path]
+        # Try extracting imports (ast with regex fallback)
+        imports, error = self._extract_imports(code)
+        if error:
+            imports = self._extract_imports_fallback(code)
 
+        # Install packages if any imports were found
+        if imports:
+            install_error = self._install_packages(imports)
+            if install_error:
+                os.unlink(temp_path)
+                return install_error
+
+        # Run the temp file, actual Python errors come through clearly here
+        command = [self.venv_python, temp_path]
         execution_result = self.execute_code(command=command)
         os.unlink(temp_path)
 
