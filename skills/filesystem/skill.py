@@ -47,6 +47,8 @@ def request_permission(title: str, message: str) -> bool:
 
     if not result:
         print("The user has blocked this file operation", file=sys.__stderr__)
+        return False
+    return True
 
 
 def create_file(path, content=None):
@@ -55,12 +57,19 @@ def create_file(path, content=None):
 
     if content:
         file_path.write_text(content, encoding="utf-8")
-
-    return "Created" + "and written" if content is not None else ""
+        print("Created and written")
+    else:
+        print("Created")
 
 
 def write_to_file(path, content):
-    request_permission("")
+    permission = request_permission(
+        "File Operation Skill",
+        f"The LLM wants to write to the file: {path}, do you accept this?",
+    )
+    if not permission:
+        return
+
     file_path = Path(path)
     try:
         file_path.write_text(content, encoding="utf-8")
