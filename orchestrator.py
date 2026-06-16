@@ -135,7 +135,7 @@ class ActionHandlers:
         if action_result_type == "IMPORT_DISCOVERY_ERROR":
             self.orchestrator.additional_context = (
                 self.orchestrator.additional_context
-                + f"The modules in the code/skill could not be discovered, and so cannot be run without errors\nHere are the errors returned: {action_result_stderr}"
+                + f"The modules in the code/skill could not be discovered, and so cannot be run without errors\nHere are the errors returned: {action_result_stderr}\nHint: instead of inline Python, use the installed skills if a skill can be used to perform the task"
                 + "\n"
             )
             return "CONTINUE"
@@ -494,9 +494,12 @@ Output of Iteration: {self.iterations}
                     stdout = action_result.get("stdout", "")
                     stderr = action_result.get("stderr", "")
                     if stdout or stderr:
-                        skill_output = f"\n[Skill Result] stdout: {stdout} | stderr: {stderr}"
+                        skill_output = (
+                            f"\n[Skill Result] stdout: {stdout} | stderr: {stderr}"
+                        )
                 self.history = (
-                    self.history + f"\n {self.step_result.get('history', '')}{skill_output}"
+                    self.history
+                    + f"\n {self.step_result.get('history', '')}{skill_output}"
                 )
                 self.runtime_skills = None
 
@@ -547,5 +550,5 @@ def run_externally(task: str, mode_override: str | None = None):
 
 
 if __name__ == "__main__":
-    task = "Open Notepad, type 'Hello from Gemini', save the file to the Desktop as gemini_test.txt."
+    task = "Paste my clipboard contents to a file called clipboard_contents.txt, delete the old file if it exists"
     run_externally(task=task)
