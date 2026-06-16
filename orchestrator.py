@@ -187,8 +187,6 @@ The code/skill ran successfully, here are the logs of the Output and Error Strea
             )
             if not self.in_autonomy:
                 self.orchestrator.step_count += 1
-            else:
-                self.orchestrator.iterations += 1
 
             self.orchestrator.replan_history = []
             self.orchestrator.additional_context = ""
@@ -491,8 +489,14 @@ Output of Iteration: {self.iterations}
                     )
 
             if successful_run:
+                skill_output = ""
+                if isinstance(action_result, dict):
+                    stdout = action_result.get("stdout", "")
+                    stderr = action_result.get("stderr", "")
+                    if stdout or stderr:
+                        skill_output = f"\n[Skill Result] stdout: {stdout} | stderr: {stderr}"
                 self.history = (
-                    self.history + f"\n {self.step_result.get('history', "")}"
+                    self.history + f"\n {self.step_result.get('history', '')}{skill_output}"
                 )
                 self.runtime_skills = None
 
