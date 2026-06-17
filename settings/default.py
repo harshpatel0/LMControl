@@ -34,7 +34,7 @@ default_settings = {
             "thinking": True,
             "temperature": 0.3,
             "keep_alive": 30,
-            "attach_screenshot_of_active_window": False,
+            "attach_screenshot_of_active_window": True,
         },
         "autonomy_actor": {
             "provider": "ollama",
@@ -42,7 +42,7 @@ default_settings = {
             "thinking": True,
             "temperature": 0.5,
             "keep_alive": 150,
-            "attach_screenshot_of_active_window": False,
+            "attach_screenshot_of_active_window": True,
         },
     },
     "orchestrator": {
