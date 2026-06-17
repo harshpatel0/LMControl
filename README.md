@@ -71,6 +71,19 @@ lmcontrol/
 
 ## Installation
 
+### Automated Setup
+
+```bash
+git clone https://github.com/harshpatel0/lmcontrol.git
+cd lmcontrol
+py main.py
+```
+
+On first launch, you'll be taken through a setup wizard, follow the onscreen prompts to setup Kodo.
+First launches will take longer as virtual environments and dependencies are installed, subsequent launches will not take as long.
+
+### Manual Installation
+
 ```bash
 git clone https://github.com/harshpatel0/lmcontrol.git
 cd lmcontrol
