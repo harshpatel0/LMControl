@@ -10,3 +10,5 @@ fastapi[standard]
 opencv-python
 numpy
 mss
+anthropic
+google-genai
