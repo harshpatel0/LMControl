@@ -1,6 +1,6 @@
 # Kodo (previously called LMControl)
 
-Kodo lets a local LLM take control of your Windows PC. It reads the live accessibility tree, reasons about what's on screen, and emits actions until the task is done. Clicks, keystrokes, file writes, code execution, whatever it takes. It runs entirely on your machine through [Ollama](https://ollama.com), so nothing leaves your computer.
+Kodo lets a local LLM take control of your Windows PC. It reads the live accessibility tree, reasons about what's on screen, and emits actions until the task is done. Clicks, keystrokes, file writes, code execution, whatever it takes. It runs entirely on your machine through [Ollama](https://ollama.com) if you choose to do so, so nothing leaves your computer.
 
 It's not a polished product. It's a project that works well enough to be genuinely useful, built to see how far local models can go on real desktop tasks. Models get confused, occasionally do something baffling, and need hand-holding on complex apps. The architecture is designed to recover when that happens rather than just die.
 
