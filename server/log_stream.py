@@ -43,15 +43,12 @@ class LogStream:
         # 2. Then initialize the proxy:
         self._stdout_proxy = _StdoutProxy(self)
 
-    # ── Public API ────────────────────────────────────────────────────────────
-
     def attach(self):
         """Install the log handler and stdout proxy."""
         root = logging.getLogger()
         root.addHandler(self._handler)
 
-        # Also hook the named lmcontrol logger directly
-        lm = logging.getLogger("lmcontrol")
+        lm = logging.getLogger("kodo")
         lm.addHandler(self._handler)
 
         sys.stdout = self._stdout_proxy
@@ -63,7 +60,7 @@ class LogStream:
         root = logging.getLogger()
         root.removeHandler(self._handler)
 
-        lm = logging.getLogger("lmcontrol")
+        lm = logging.getLogger("kodo")
         lm.removeHandler(self._handler)
 
         self._put_threadsafe(_DONE)

@@ -1,7 +1,5 @@
 # Kodo
 
-> Note, the name is being switched currently from LMControl to Kodo, some sections may still refer to LMControl
-
 Kodo lets a local LLM take control of your Windows PC. It reads the live accessibility tree, reasons about what's on screen, and emits actions until the task is done. Clicks, keystrokes, file writes, code execution, whatever it takes. It runs entirely on your machine through [Ollama](https://ollama.com), so nothing leaves your computer.
 
 It's not a polished product. It's a project that works well enough to be genuinely useful, built to see how far local models can go on real desktop tasks. Models get confused, occasionally do something baffling, and need hand-holding on complex apps. The architecture is designed to recover when that happens rather than just die.
@@ -22,7 +20,7 @@ This is a project I started making on my own with no scope planning or safety de
 - [Project Structure](#project-structure)
 - [Installation](#installation)
 - [Setup](#setup)
-- [Running LMControl](#running-lmcontrol)
+- [Running Kodo](#running-Kodo)
 - [Modes](#modes)
 - [Settings](#settings)
 - [Model Recommendations](#model-recommendations)
@@ -38,7 +36,7 @@ This is a project I started making on my own with no scope planning or safety de
 ## Project Structure
 
 ```
-lmcontrol/
+Kodo/
 ├── orchestrator.py              # Entry point, StepOrchestrator, AutonomyOrchestrator
 ├── parse_action.py              # Routes actor JSON output to PC actions or skills
 ├── context_provider.py          # UI tree, screenshots, window info, UITreeHandler
@@ -125,18 +123,14 @@ Kodo exposes an API, make sure all dependencies are installed and then run the m
 > If the Live Desktop Preview does not show up, refresh the page.
 
 ### Directly
+
 Open `orchestrator.py` and set your task at the bottom of the file. There are two modes, covered in the next section.
 
 ```python
-task = "Open Word and write a full report on dinosaurs"
+if __name__ == "__main__":
+    task = "Paste my clipboard contents to a file called clipboard_contents.txt, delete the old file if it exists"
 
-# Planner-Actor mode
-plan = models.planner_model.make_plan(task)
-
-# Autonomy mode
-autonomy_orchestrator = AutonomyOrchestrator(task)
-autonomy_orchestrator.run_skill_installation_mode()
-autonomy_orchestrator.run()
+    run_externally(task=task, mode_override="autonomy OR planner-actor")
 ```
 
 Define the settings in `settings.json` on the mode you would like to use under `settings > orchestrator > use_autonomy_mode`
@@ -148,7 +142,7 @@ python orchestrator.py
 ```
 
 Keep your mouse away from the top-left corner of the screen. That's the pyautogui failsafe and straying into that corner will immediately abort the run.
-You now also know what to do incase you want to stop it.
+> You now also know what to do incase you want to stop it.
 
 ---
 
@@ -182,9 +176,10 @@ The inconsistency is the main thing to be aware of going in. `action_settle_time
 While on this topic, it is likely that Exceptions from invalid inputs are triggered, they sometimes happen and sometimes don't, so I am sure I haven't caught 99.9% of them.
 
 ---
+
 ### Settings
 
-On first run, LMControl writes a `settings.json` to the project root using the defaults below. Edit it directly and restart.
+On first run, Kodo writes a `settings.json` to the project root using the defaults below. Edit it directly and restart.
 
 ```json
 {
@@ -285,7 +280,7 @@ On first run, LMControl writes a `settings.json` to the project root using the d
 
 ## Model Recommendations
 
-LMControl was built on `gemma4:e4b` and that's still the recommendation. It handles structured JSON output well, follows long system prompts reliably, and the thinking mode gives it meaningfully better reasoning on UI tasks.
+Kodo was built on `gemma4:e4b` and that's still the recommendation. It handles structured JSON output well, follows long system prompts reliably, and the thinking mode gives it meaningfully better reasoning on UI tasks.
 
 | Model | Verdict |
 |---|---|
@@ -300,7 +295,7 @@ LMControl was built on `gemma4:e4b` and that's still the recommendation. It hand
 
 ## Skills
 
-Skills are how you extend LMControl beyond basic mouse and keyboard actions. A skill can teach the planner how to approach a task, give the actor step-by-step procedural guidance for a specific application, expose new callable actions the actor can emit, or all of the above.
+Skills are how you extend Kodo beyond basic mouse and keyboard actions. A skill can teach the planner how to approach a task, give the actor step-by-step procedural guidance for a specific application, expose new callable actions the actor can emit, or all of the above.
 
 ### Skill Types
 
@@ -425,7 +420,7 @@ if __name__ == "__main__":
 
 ## Architecture
 
-Here's what happens when you give LMControl a task.
+Here's what happens when you give Kodo a task.
 
 ### Skill Installation Phase
 
@@ -476,7 +471,7 @@ The actor can request skill installation mid-task via `{"action": "install_skill
 
 ### Python Code Execution
 
-The `python` action lets the actor write and run arbitrary Python code in-task. `PythonRunner` handles it by parsing the code's imports using Python's AST module, auto-installing any missing third-party packages into a dedicated `.lmcontrol_venv` virtual environment, and running the code in a subprocess with a configurable timeout.
+The `python` action lets the actor write and run arbitrary Python code in-task. `PythonRunner` handles it by parsing the code's imports using Python's AST module, auto-installing any missing third-party packages into a dedicated `.kodo_venv` virtual environment, and running the code in a subprocess with a configurable timeout.
 
 The stdout, stderr, and a result type (`SUCCESS`, `ERROR`, `TIMEOUT`, `PY_EXCEPTION`) come back to the orchestrator as context for the next action. The actor can use this to write files, launch applications, manipulate the clipboard, or query system state without touching the UI at all.
 

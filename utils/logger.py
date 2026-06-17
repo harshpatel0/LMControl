@@ -2,7 +2,7 @@ import logging
 import sys
 
 
-def setup_shared_logger(name, log_file="lmcontrol.log"):
+def setup_shared_logger(name, log_file="kodo.log"):
     formatter = logging.Formatter(
         fmt="%(asctime)s - %(levelname)s - %(module)s - %(message)s",
         datefmt="%d-%m-%Y %H:%M:%S",
@@ -26,4 +26,4 @@ def setup_shared_logger(name, log_file="lmcontrol.log"):
     return logger
 
 
-logger = setup_shared_logger("lmcontrol")
+logger = setup_shared_logger("kodo")

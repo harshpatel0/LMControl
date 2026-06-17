@@ -31,7 +31,7 @@ export function navigate(page) {
 
   // Update page header title
   const titles = {
-    run:      { title: 'Run Task',  subtitle: 'Execute a task using the LMControl orchestrator' },
+    run:      { title: 'Run Task',  subtitle: 'Execute a task using the Kodo orchestrator' },
     settings: { title: 'Settings', subtitle: 'Configure models, orchestrator, and context provider' },
     logs:     { title: 'Logs',     subtitle: 'View the live log stream and history' },
   };

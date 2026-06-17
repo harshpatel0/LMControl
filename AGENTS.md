@@ -1,6 +1,6 @@
-# LMControl — Agent Navigation Guide
+# Kodo — Agent Navigation Guide
 
-This project is **LMControl**, a Windows automation framework that uses LLMs to plan and execute tasks via UI interaction, Python code execution, and custom skills.
+This project is **Kodo**, a Windows automation framework that uses LLMs to plan and execute tasks via UI interaction, Python code execution, and custom skills.
 
 **DO NOT USE THE OLD README.md** — it is outdated and half-useless. Use this file for navigation.
 
@@ -10,9 +10,9 @@ This project is **LMControl**, a Windows automation framework that uses LLMs to 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        LMControl                              │
+│                        Kodo                                 │
 ├─────────────────────────────────────────────────────────────┤
-│  main.py              → FastAPI server entry point           │
+│  main.py              → FastAPI server entry point           
 │  orchestrator.py      → Planner-Actor & Autonomy orchestration│
 │  context_provider.py  → UI tree extraction (pywinauto)       │
 │  models/              → Ollama model wrappers                 │
