@@ -92,7 +92,7 @@ class ContextProvider:
             if skip_after_ticks >= SKIP_TICKS:
                 break
 
-        logger.debug(f"UI Stabilized with {last_count} elements. Extracting data...")
+        logger.debug(f"UI Stabilized with {current_count} elements. Extracting data...")
 
         seen = set()
         elements = []
@@ -109,6 +109,9 @@ class ContextProvider:
         for element in window.descendants():
             try:
                 ctrl_type = element.element_info.control_type
+
+                if ctrl_type not in ALLOWED_CONTROL_TYPES:
+                    continue
 
                 # --- Bounds check (fast reject) ---
                 rect = element.rectangle()
