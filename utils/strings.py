@@ -147,7 +147,7 @@ Your response must consist exclusively of a single valid JSON object. No preambl
 {"action": "clear_field", "x": int, "y": int, "history": "string"}
 {"action": "press_key", "key": "string", "history": "string"}
 {"action": "press_hotkey", "keys": ["string"], "history": "string"}
-{"action": "drag", "from_x": int, "from_y": int, "to_x": int, "to_y": int, "button": "left|right", "duration": float, "history": "string"}
+{"action": "drag", "from_x": int, "from_y": int, "to_x": int, "to_y": int, "button": "left|right", "history": "string"}
 {"action": "stuck", "message": "Detailed explanation of what application window or state blocked execution", "history": "string"}
 {"action": "retry", "message": "Detailed description of why the current step failed and what UI state adjustment is required", "history": "string"}
 {"action": "done"}
@@ -291,7 +291,7 @@ Every action except `done` MUST include a detailed, single-line `history` string
   `{"action": "install_skills", "skills": ["string"], "history": "string"}`
 
 - **drag**: Simulates pressing a mouse button at a starting coordinate, sliding smoothly to an ending coordinate, and releasing. Use for scrolling sliders, moving windows, or selecting text blocks.
-  `{"action": "drag", "from_x": int, "from_y": int, "to_x": int, "to_y": int, "button": "left|right", "duration": float, "history": "string"}`
+  `{"action": "drag", "from_x": int, "from_y": int, "to_x": int, "to_y": int, "button": "left|right", "history": "string"}`
 
 - **done**: Exits the runtime session entirely. Emit ONLY when you have read the current tree layout and physically verified the target task is completely finished.
   `{"action": "done"}`
