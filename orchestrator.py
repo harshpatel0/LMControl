@@ -507,26 +507,26 @@ Output of Iteration: {self.iterations}
                 )
                 self.runtime_skills = None
 
-                # Guard against the actor repeating the same action — if the last
-                # two actions are identical the actor is likely stuck in a loop.
-                if self.last_action is not None and self.step_result.get(
-                    "action"
-                ) == self.last_action.get("action"):
-                    # Allow one retry with the same action before bailing
-                    if getattr(self, "_same_action_count", 0) == 0:
-                        self._same_action_count = 1
-                        self.additional_context += (
-                            f"[WARNING] You just performed '{self.last_action['action']}' and nothing changed. "
-                            "Try a different approach.\n"
-                        )
-                    else:
-                        self.additional_context += (
-                            f"[CRITICAL] You repeated '{self.last_action['action']}' twice without success. "
-                            "Stop and try a completely different approach.\n"
-                        )
-                        self.hard_exit = True
-                else:
-                    self._same_action_count = 0
+                # if self.last_action is not None and self.step_result.get(
+                #     "action"
+                # ) == self.last_action.get("action"):
+                #     # Allow one retry with the same action before bailing
+                #     if getattr(self, "_same_action_count", 0) == 0:
+                #         self._same_action_count = 1
+                #         self.additional_context += (
+                #             f"[WARNING] You just performed '{self.last_action['action']}' and nothing changed. "
+                #             "Try a different approach.\n"
+                #         )
+                #     else:
+                #         self.additional_context += (
+                #             f"[CRITICAL] You repeated '{self.last_action['action']}' twice without success. "
+                #             "Stop and try a completely different approach.\n"
+                #         )
+                #         self.hard_exit = True
+                # else:
+                #     self._same_action_count = 0
+
+                # There is no good way of enforcing limits on a model without eventually causing accidental misfires, this code is commented out
                 self.last_action = self.step_result
 
 
