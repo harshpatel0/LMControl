@@ -103,17 +103,3 @@ def parse_action(action):
             return_command = "RETRY"
 
     return return_command
-
-
-if __name__ == "__main__":
-    fake_drag_action = {
-        "action": "drag",
-        "from_x": 100,
-        "from_y": 200,
-        "to_x": 300,
-        "to_y": 400,
-        "button": "left",
-    }
-
-    result = parse_action(fake_drag_action)
-    print(result)  # Should return "PROCEED"
