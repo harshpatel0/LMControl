@@ -13,3 +13,45 @@ MODEL_DEFINITIONS_ENABLE_DEBUG_OLLAMA_REQUESTS = False
 MODEL_DEFINITIONS_DEBUG_OLLAMA_REQUESTS_TO_FILE = "dbg_make_ollama_request.txt"
 
 CONTEXT_PROVIDER_UI_DIFF_THRESHOLD_PERCENTAGE = 30
+
+ALLOWED_CONTROL_TYPES = {
+    # Core interactive controls
+    "Button",
+    "Edit",
+    "ComboBox",
+    "List",
+    "ListItem",
+    "Menu",
+    "MenuItem",
+    "MenuBar",
+    "CheckBox",
+    "RadioButton",
+    "Slider",
+    "Spinner",
+    # Text + document
+    "Text",
+    "Document",
+    # Containers / structure
+    "Pane",
+    "Group",
+    "Window",
+    "Custom",
+    # Navigation / hierarchy
+    "Tree",
+    "TreeItem",
+    "Tab",
+    "TabItem",
+    # Advanced / less common but useful
+    "Hyperlink",
+    "DataItem",
+    "DataGrid",
+    "Table",
+    # Tooling / UX
+    "ToolBar",
+    "StatusBar",
+    "TitleBar",
+    # Modern UI patterns
+    "SplitButton",
+    "Thumb",
+    "ProgressBar",
+}

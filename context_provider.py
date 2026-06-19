@@ -12,6 +12,7 @@ import time
 from settings.settings import settings
 from utils.globals import (
     CONTEXT_PROVIDER_UI_DIFF_THRESHOLD_PERCENTAGE as THRESHOLD_PERCENTAGE,
+    ALLOWED_CONTROL_TYPES,
 )
 
 
@@ -21,48 +22,6 @@ class ContextProvider:
         f"{platform.system()} {platform.release()} Build: {platform.version()}"
     )
     screen_width, screen_height = pyautogui.size()
-
-    ALLOWED_CONTROL_TYPES = {
-        # Core interactive controls
-        "Button",
-        "Edit",
-        "ComboBox",
-        "List",
-        "ListItem",
-        "Menu",
-        "MenuItem",
-        "MenuBar",
-        "CheckBox",
-        "RadioButton",
-        "Slider",
-        "Spinner",
-        # Text + document
-        "Text",
-        "Document",
-        # Containers / structure
-        "Pane",
-        "Group",
-        "Window",
-        "Custom",
-        # Navigation / hierarchy
-        "Tree",
-        "TreeItem",
-        "Tab",
-        "TabItem",
-        # Advanced / less common but useful
-        "Hyperlink",
-        "DataItem",
-        "DataGrid",
-        "Table",
-        # Tooling / UX
-        "ToolBar",
-        "StatusBar",
-        "TitleBar",
-        # Modern UI patterns
-        "SplitButton",
-        "Thumb",
-        "ProgressBar",
-    }
 
     def _get_elements_from_window(self, window):
         last_count = 0
