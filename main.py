@@ -27,7 +27,7 @@ def _run_under_venv():
     sys.exit(subprocess.call([str(venv_python)] + sys.argv))
 
 
-def _open_browser_delayed(url: str, delay: float = 1.5):
+def _open_browser_delayed(url: str, delay: float = 3.5):
     def _open():
         time.sleep(delay)
         webbrowser.open_new(url)
