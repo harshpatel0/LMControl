@@ -2,7 +2,7 @@
 
 This project is **Kodo**, a Windows automation framework that uses LLMs to plan and execute tasks via UI interaction, Python code execution, and custom skills.
 
-**DO NOT USE THE OLD README.md** — it is outdated and half-useless. Use this file for navigation.
+**DO NOT USE THIS FILE** — DO NOT USE THIS AGENTS.MD FILE, IT HASN'T BEEN UPDATED WITH ANYTHING NEW
 
 ---
 
