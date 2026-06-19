@@ -9,12 +9,13 @@ __pycache__/
 
 dev/
 
-# WIP and Proposed Features that are not ready to ship
-modules/
 lmcontrol.log
+kodo.log
 
 settings.json
+
 venv/
+
 dbg_actor_model.txt
 dbg_make_ollama_request.txt
 initialised.txt
