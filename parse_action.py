@@ -59,7 +59,7 @@ def parse_action(action):
                 to_x=int(action["to_x"]),
                 to_y=int(action["to_y"]),
                 button=action.get("button", "left"),
-                duration=action.get("duration", 0.5),
+                duration=action.get("duration", 0.01),
             )
 
         case "scroll_v":
