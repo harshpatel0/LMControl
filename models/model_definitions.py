@@ -126,7 +126,7 @@ Current Taskbar Setup Accessibility Tree
 
         if (
             settings.models.planner.thinking
-            and settings.models.planner.model_name.startswith("gemma4")
+            and settings.models.planner.model_name.startswith("gemma")
         ):
             system_prompt = system_prompt + "<|think|>"
 
@@ -197,7 +197,7 @@ Treat skill actions as first-class actions alongside the standard ones above.
             cfg = _get_actor_config()
             thinking_enabled = getattr(cfg, "thinking", False)
 
-            if thinking_enabled and cfg.model_name.startswith("gemma4"):
+            if thinking_enabled and cfg.model_name.startswith("gemma"):
                 system_prompt = system_prompt + "<|think|>"
 
             system_prompt = system_prompt + self.build_system_prompt_with_skills(skills)
