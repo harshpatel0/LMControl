@@ -57,7 +57,13 @@ default_settings = {
             "max_total_iterations": 50,
         },
     },
-    "context_provider": {"waiting_period": 4, "skip_after_ticks": 10},
+    "context_provider": {
+        "waiting_period": 4,
+        "skip_after_ticks": 10,
+        "take_full_screen_screenshot": True,
+        "screenshot_quality_percentage": 80,
+        "provide_uia_tree": True,
+    },
     "skills": {
         "skill_timeout": 0,
     },

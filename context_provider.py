@@ -23,6 +23,9 @@ class ContextProvider:
     )
     screen_width, screen_height = pyautogui.size()
 
+    def __init__(self) -> None:
+        pass
+
     def _get_elements_from_window(self, window):
         last_count = 0
         stable_ticks = 0
@@ -175,34 +178,45 @@ class ContextProvider:
         Captures only the active window region.
         Falls back to full screenshot if window bounds can't be determined.
         """
-        try:
-            if window_title is None:
-                win = gw.getActiveWindow()
-            else:
-                wins = gw.getWindowsWithTitle(window_title)
-                win = wins[0] if wins else gw.getActiveWindow()
+        do_take_full_screen_screenshot = (
+            settings.context_provider.take_full_screen_screenshot
+        )
 
-            if win is None:
-                raise ValueError("No window found")
+        if not do_take_full_screen_screenshot:
+            try:
+                if window_title is None:
+                    win = gw.getActiveWindow()
+                else:
+                    wins = gw.getWindowsWithTitle(window_title)
+                    win = wins[0] if wins else gw.getActiveWindow()
 
-            left = max(win.left, 0)
-            top = max(win.top, 0)
-            width = win.width
-            height = win.height
+                if win is None:
+                    raise ValueError("No window found")
 
-            if width <= 0 or height <= 0:
-                raise ValueError("Window has zero size")
+                left = max(win.left, 0)
+                top = max(win.top, 0)
+                width = win.width
+                height = win.height
 
-            screenshot = pyautogui.screenshot(region=(left, top, width, height))
+                if width <= 0 or height <= 0:
+                    raise ValueError("Window has zero size")
 
-        except Exception as e:
-            logger.warning(
-                f"[ContextProvider] Window screenshot failed ({e}), falling back to full screen."
-            )
+                screenshot = pyautogui.screenshot(region=(left, top, width, height))
+
+            except Exception as e:
+                logger.warning(
+                    f"[ContextProvider] Window screenshot failed ({e}), falling back to full screen."
+                )
+                screenshot = pyautogui.screenshot()
+        else:
             screenshot = pyautogui.screenshot()
 
         buffer = io.BytesIO()
-        screenshot.save(buffer, format="JPEG", quality=70)
+        screenshot.save(
+            buffer,
+            format="JPEG",
+            quality=int(settings.context_provider.screenshot_quality_percentage),
+        )
         img_bytes = buffer.getvalue()
         return base64.b64encode(img_bytes).decode("utf-8")
 
@@ -264,6 +278,9 @@ class UITreeHandler:
         return (added_items, removed_items)
 
     def request_tree_diffs(self):
+        if not settings.context_provider.provide_uia_tree:
+            return "UIA Tree has been disabled"
+
         active_window = self.context_provider.get_active_window()
         window_changed = active_window != self._last_active_window
         self._last_active_window = active_window
