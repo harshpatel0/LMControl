@@ -13,19 +13,21 @@ actor_model = ActorModel()
 
 
 def do_step(
-    task,
+    task: str,
     history=None,
-    additional_context=None,
+    additional_context: str | None = None,
     punishment_tally=None,
     skills=None,
     runtime_skills=None,
     available_skill_actions=None,
 ):
+    actor_model.construct_system_prompt(task=task, skills=skills)
+
     user_prompt = actor_model.construct_user_prompt(
         task=task, instruction=None, expected_result=None
     )
 
-    if additional_context or len(additional_context) > 0:
+    if additional_context:
         user_prompt = actor_model.return_prompt_with_additional_context(
             user_prompt, additional_context
         )
@@ -58,7 +60,7 @@ def do_step(
             accompanying_message="Here is a running history of everything you said you did:",
         )
 
-    response = actor_model.run(user_prompt, skills=skills)
+    response = actor_model.run(user_prompt)
     raw = utils.strip_markdown_json(response).strip()
 
     action, parse_error = utils.try_parse_json(raw)

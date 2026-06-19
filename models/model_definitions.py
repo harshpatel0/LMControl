@@ -111,29 +111,36 @@ class PlannerModel:
     system_prompt = Strings.PLANNER_BASE_SYSTEM_PROMPT
 
     def __init__(self):
-        pass
+        self.base_system_prompt = Strings.PLANNER_BASE_SYSTEM_PROMPT
 
     def run(self, task, skills=None):
         user_prompt = f"""
 # PC Environment
-OS: {context_provider.WINDOWS_VERSION}
-Screen: {context_provider.screen_width}x{context_provider.screen_height}
-Pinned Taskbar Apps: {context_provider.get_pinned_apps()}
-Installed Apps: {context_provider.installed_apps}
 Active Window: "{context_provider.get_active_window()}"
 
 Current Taskbar Setup Accessibility Tree
 {context_provider.get_taskbar_elements()}
 
-# Task (What the user wants to do)
-> {task}
-    """
+"""
         system_prompt = ""
 
-        if settings.models.planner.thinking:
+        if (
+            settings.models.planner.thinking
+            and settings.models.planner.model_name.startswith("gemma4")
+        ):
             system_prompt = system_prompt + "<|think|>"
 
-        system_prompt = system_prompt + self.system_prompt
+        # Populate context that stays constant
+
+        system_prompt = system_prompt + f"""
+# PC Environment
+OS: {context_provider.WINDOWS_VERSION}
+Screen: {context_provider.screen_width}x{context_provider.screen_height}
+
+User Task: {task}
+"""
+
+        system_prompt = system_prompt + self.base_system_prompt
 
         if skills:
             logger.info("[MODEL ORCHESTRATOR] Installing Skills into System Prompt")
@@ -166,7 +173,10 @@ Treat skill actions as first-class actions alongside the standard ones above.
 
 
 class ActorModel:
-    def build_system_prompt_with_skills(self, skills=None):
+    def __int__(self):
+        self.system_prompt = ""
+
+    def build_system_prompt_with_skills(self, skills=None, task=None):
         active_system_prompt = _get_actor_system_prompt()
 
         if not skills:
@@ -179,6 +189,36 @@ Treat skill actions as first-class actions alongside the standard ones above.
 
 {skills}
 """
+
+    def construct_system_prompt(self, task=None, skills=None):
+        if self.system_prompt == "":
+            system_prompt = ""
+
+            cfg = _get_actor_config()
+            thinking_enabled = getattr(cfg, "thinking", False)
+
+            if thinking_enabled and cfg.model_name.startswith("gemma4"):
+                system_prompt = system_prompt + "<|think|>"
+
+            system_prompt = system_prompt + self.build_system_prompt_with_skills(skills)
+
+            system_prompt = system_prompt + f"""
+# PC Environment
+OS: {context_provider.WINDOWS_VERSION}
+Screen: {context_provider.screen_width}x{context_provider.screen_height}
+
+    """
+            if USING_AUTONOMY_MODE:
+                if not task:
+                    raise ValueError(
+                        "Constructing a system prompt in autonomy mode requires the task"
+                    )
+                system_prompt = system_prompt + f"""
+Task: {task}
+"""
+            self.system_prompt = system_prompt
+
+        return self.system_prompt
 
     def construct_user_prompt(self, task, instruction, expected_result):
         user_prompt = f"""
@@ -212,13 +252,9 @@ Taskbar Elements
         user_prompt = user_prompt + f"\n{accompanying_message}\n{additional_context}"
         return user_prompt
 
-    def __init__(self):
-        pass
-
-    def run(self, user_prompt, skills=None):
+    def run(self, user_prompt):
         cfg = _get_actor_config()
         attach_screenshot = getattr(cfg, "attach_screenshot_of_active_window", False)
-        thinking_enabled = getattr(cfg, "thinking", False)
 
         user_message = ChatMessage(role="user", content=user_prompt)
 
@@ -229,15 +265,8 @@ Taskbar Elements
                 )
             ]
 
-        system_prompt = ""
-
-        if thinking_enabled:
-            system_prompt = system_prompt + "<|think|>"
-
-        system_prompt = system_prompt + self.build_system_prompt_with_skills(skills)
-
         messages = [
-            ChatMessage(role="system", content=system_prompt),
+            ChatMessage(role="system", content=self.system_prompt),
             user_message,
         ]
 
