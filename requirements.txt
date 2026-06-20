@@ -11,4 +11,6 @@ opencv-python
 numpy
 mss
 anthropic
+pyscreeze
 google-genai
+pillow
