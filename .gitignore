@@ -19,3 +19,4 @@ venv/
 dbg_actor_model.txt
 dbg_make_ollama_request.txt
 initialised.txt
+prompts/custom_instructions.md
