@@ -1,0 +1,8 @@
+{
+    "name": "textbox-input",
+    "description": "Prompt user with a Tkinter popup textbox and return their response. Use when you may be unsure of the task and need more information",
+    "enabled": true,
+    "actions": ["prompt_user"],
+    "entry": "skill.py",
+    "dependencies": []
+}
