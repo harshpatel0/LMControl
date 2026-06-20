@@ -34,40 +34,6 @@ This is a project I started making on my own with no scope planning or safety de
 
 ---
 
-## Project Structure
-
-```
-Kodo/
-├── orchestrator.py              # Entry point, StepOrchestrator, AutonomyOrchestrator
-├── parse_action.py              # Routes actor JSON output to PC actions or skills
-├── context_provider.py          # UI tree, screenshots, window info, UITreeHandler
-├── models/
-│   ├── actor_model.py           # Actor call wrappers (do_step, do_autonomy_step)
-│   ├── planner_model.py         # Planner call wrapper (make_plan)
-│   └── ollama/
-│       └── model_definitions.py # PlannerModel, ActorModel, SkillInstallationMode
-├── pc_actions/
-│   └── perform_pc_actions.py    # pyautogui wrappers (click, type, drag, scroll, etc.)
-├── python/
-│   └── run_python_code.py       # Isolated venv Python runner
-├── settings/
-│   ├── default.py               # Default settings
-│   └── settings.py              # Settings loader (creates settings.json on first run)
-├── skills/
-│   ├── skill_orchestrator.py    # Skill discovery, loading, and dispatch
-│   ├── browser-navigation/      # Static skill -- open_url action + actor/planner docs
-│   ├── launch-windows-app/      # Dynamic skill -- generates app list at runtime
-│   ├── python/                  # Documentation skill -- documents the python action
-│   ├── toast-notifications/     # Static skill -- send_toast action
-│   └── word-navigation/         # Documentation skill -- Microsoft Word UIA guide
-└── utils/
-    ├── logger.py                # Shared logger (console INFO, file DEBUG)
-    ├── strings.py               # System prompts for planner, actor, autonomy, skill install
-    └── utils.py                 # strip_markdown_json helper
-```
-
----
-
 ## Installation
 
 ### Automated Setup
