@@ -10,6 +10,9 @@ class PCActions:
     def click(self, position_x, position_y, button="left"):
         pyautogui.click(button=button, x=position_x, y=position_y)
 
+    def double_click(self, position_x, position_y, button="left"):
+        pyautogui.doubleClick(button=button, x=position_x, y=position_y)
+
     def vscroll(self, scroll_amount, position_x, position_y):
         pyautogui.scroll(clicks=scroll_amount, x=position_x, y=position_y)
 

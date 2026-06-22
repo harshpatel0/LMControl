@@ -37,6 +37,20 @@ def parse_action(action):
             except KeyError:
                 return_command = "RETRY"
 
+        case "double_click":
+            logger.debug(
+                f"Double Clicking at X={action['x']}, Y={action['y']} on element={action.get('element')}"
+            )
+
+            try:
+                pc.double_click(
+                    position_x=int(action["x"]),
+                    position_y=int(action["y"]),
+                    button=action.get("button", "left"),
+                )
+            except KeyError:
+                return_command = "RETRY"
+
         case "type":
             x = int(action["x"]) if action.get("x") is not None else None
             y = int(action["y"]) if action.get("y") is not None else None

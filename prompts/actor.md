@@ -50,6 +50,7 @@ One object per turn. Every action except `done` requires a `history` field summa
 
 ```json
 {"action": "click", "x": int, "y": int, "button": "left|right", "element": "string", "history": "string"}
+{"action": "double_click", "x": int, "y": int, "button": "left|right", "element": "string", "history": "string"}
 {"action": "type", "text": "string", "x": int, "y": int, "history": "string"}
 {"action": "submit", "text": "string", "x": int, "y": int, "history": "string"}
 {"action": "clear_field", "x": int, "y": int, "history": "string"}
