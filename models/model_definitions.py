@@ -166,10 +166,7 @@ Treat skill actions as first-class actions alongside the standard ones above.
             output_format="json",
         )
 
-        if response.thinking:
-            logger.info(f"Thinking: {response.thinking.strip()}")
-
-        return response.content
+        return response
 
 
 class ActorModel:
@@ -271,6 +268,7 @@ Taskbar Elements
         ]
 
         provider = get_provider(cfg)
+
         response = provider.chat(
             messages=messages,
             model=cfg.model_name,
@@ -279,17 +277,4 @@ Taskbar Elements
             output_format="json",
         )
 
-        if response.thinking:
-            logger.info(f"Thinking: {response.thinking.strip()}")
-
-        content_text = response.content
-
-        if not content_text:
-            logger.warning(
-                "[Internal Guard] The model returned nothing, simulating a retry call from the step orchestrator"
-            )
-            return """{
-"action": "retry",
-"message": "Model returned an empty response, likely due to context overload. Retry with the same step."}
-"""
-        return content_text
+        return response
