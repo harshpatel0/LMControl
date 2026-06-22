@@ -8,8 +8,28 @@ from utils.globals import (
     ACTOR_MODEL_DEBUG_USER_PROMPT_CONSTRUCTION_TO_FILE,
 )
 
+from server.log_stream import web_emitter
+from settings.settings import settings
+
 context = ContextProvider()
 actor_model = ActorModel()
+
+
+def log_to_debug_file(user_prompt: str, action: dict):
+    with open(
+        ACTOR_MODEL_DEBUG_USER_PROMPT_CONSTRUCTION_TO_FILE, "a", encoding="utf-8"
+    ) as file:
+        file.write(f"""
+User Prompt
+{"=" * 20}
+{user_prompt}
+
+Result
+{"=" * 20}
+{action}
+
+{"=" * 20}
+""")
 
 
 def do_step(
@@ -21,6 +41,15 @@ def do_step(
     runtime_skills=None,
     available_skill_actions=None,
 ):
+
+    cfg = (
+        settings.models.autonomy_actor
+        if settings.orchestrator.use_autonomy_mode
+        else settings.models.actor
+    )
+    model_provider = cfg.provider
+    model_name = cfg.model_name
+
     actor_model.construct_system_prompt(task=task, skills=skills)
 
     user_prompt = actor_model.construct_user_prompt(
@@ -60,7 +89,20 @@ def do_step(
             accompanying_message="Here is a running history of everything you said you did:",
         )
 
-    response = actor_model.run(user_prompt)
+    chat_response = actor_model.run(user_prompt)
+    response = chat_response.content
+
+    web_emitter.metrics(
+        {
+            "tokens_in": chat_response.input_tokens,
+            "tokens_out": chat_response.output_tokens,
+            "elapsed_ms": chat_response.total_duration_ms,
+            "model": model_name,
+            "provider": model_provider,
+            "mode": "autonomy" if settings.orchestrator.use_autonomy_mode else "actor",
+        }
+    )
+
     raw = utils.strip_markdown_json(response).strip()
 
     action, parse_error = utils.try_parse_json(raw)
@@ -76,20 +118,10 @@ def do_step(
         }
 
     if ACTOR_MODEL_ENABLE_DEBUG_OUTPUT_PROMPTS_AND_RESULT_TO_FILE:
-        with open(
-            ACTOR_MODEL_DEBUG_USER_PROMPT_CONSTRUCTION_TO_FILE, "a", encoding="utf-8"
-        ) as file:
-            file.write(f"""
-User Prompt
-{"=" * 20}
-{user_prompt}
-
-Result
-{"=" * 20}
-{action}
-
-{"=" * 20}
-""")
+        log_to_debug_file(user_prompt=user_prompt, action=action)
 
     logger.debug(action)
+
+    web_emitter.action(action)
+
     return action
