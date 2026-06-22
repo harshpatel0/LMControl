@@ -50,3 +50,5 @@ This is a personal project, built without formal scope planning or a safety revi
 - Running this software, granting it accessibility/UI control, and configuring any model provider is entirely **your decision and your responsibility**.
 
 If any of the above is unacceptable to you, do not run Kodo — or only run it with Ollama, in a disposable/sandboxed environment, with no sensitive data, accounts, or files accessible.
+
+! SKILLS CAN READ YOUR ENVIRONMENT VARIABLES, THIS MEANS THAT IT CAN JUST READ YOUR API KEYS!
