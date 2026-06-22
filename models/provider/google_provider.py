@@ -1,6 +1,7 @@
 import os
 import base64
 from settings.settings import settings
+import time
 
 DO_THINKING = False
 
@@ -64,6 +65,8 @@ class GoogleProvider(ModelProvider):
         **kwargs,
     ) -> ChatResponse:
         from google.genai import types
+
+        timer_start = time.monotonic()
 
         system_prompt = None
         history = []
@@ -136,8 +139,6 @@ class GoogleProvider(ModelProvider):
         except Exception:
             input_tokens = output_tokens = 0
 
-        # text = response.text.strip() if response.text else ""
-
         text = ""
         thinking = ""
 
@@ -152,9 +153,12 @@ class GoogleProvider(ModelProvider):
         if thinking:
             logger.debug(f"[GoogleProvider] Reasoning:\n{thinking}")
 
+        elapsed_time = int((time.monotonic() - timer_start) * 1000)
+
         return ChatResponse(
             content=text,
-            thinking=None,
+            thinking=thinking if thinking != "" else None,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            total_duration_ms=elapsed_time,
         )

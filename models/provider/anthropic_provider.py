@@ -5,6 +5,8 @@ from utils.logger import logger
 import anthropic as _anthropic
 from settings.settings import settings
 
+import time
+
 DO_THINKING = False
 
 if settings.orchestrator.use_autonomy_mode:
@@ -49,6 +51,8 @@ class AnthropicProvider(ModelProvider):
         max_tokens: int | None = None,
         **kwargs,
     ) -> ChatResponse:
+
+        timer_start = time.monotonic()
 
         system_prompt = None
         api_messages = []
@@ -107,9 +111,12 @@ class AnthropicProvider(ModelProvider):
             elif block.type == "thinking":
                 thinking = (thinking or "") + block.thinking
 
+        elapsed_time = int((time.monotonic() - timer_start) * 1000)
+
         return ChatResponse(
             content=content.strip(),
             thinking=thinking,
             input_tokens=response.usage.input_tokens,
             output_tokens=response.usage.output_tokens,
+            total_duration_ms=elapsed_time,
         )
