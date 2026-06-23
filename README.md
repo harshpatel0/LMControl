@@ -18,10 +18,10 @@ This is a project I started making on my own with no scope planning or safety de
 
 ## Table of Contents
 
-- [Project Structure](#project-structure)
 - [Installation](#installation)
 - [Setup](#setup)
 - [Running Kodo](#running-kodo)
+- [Custom Instructions](#custom-instructions)
 - [Modes](#modes)
 - [Settings](#settings)
 - [Model Recommendations](#model-recommendations)
@@ -146,6 +146,11 @@ Skip the plan entirely. The actor runs in a free loop, observing the UI state ea
 This mode handles open-ended tasks better. Run `run_skill_installation_mode()` before `run()` so it has the relevant skills loaded going in.
 
 ---
+
+## Custom Instructions
+
+Custom Instructions can be added to Kodo, in the `prompts/custom_instructions.md` file, these are additional instructions you would like Kodo to remember when performing a task, such as your name, your PC's username, PC's specs or how you would like Kodo to handle your tasks and use your skills.
+Create the file and add in your custom instructions in Markdown format.
 
 ## In Practice
 
