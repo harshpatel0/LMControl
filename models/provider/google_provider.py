@@ -122,8 +122,6 @@ class GoogleProvider(ModelProvider):
                         f"Google AI is temporarily unavailable, the model might be in high demand and currenly unavailable."
                         f"Waiting 60 seconds before retry (attempt {attempt+1}/3)..."
                     )
-                    import time
-
                     time.sleep(60)
                     continue
                 logger.error(
