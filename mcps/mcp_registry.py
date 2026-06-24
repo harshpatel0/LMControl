@@ -27,3 +27,6 @@ class MCPRegistry:
             }
             for name, (_, tool) in self._tools.items()
         ]
+
+
+mcp_registry = MCPRegistry()
