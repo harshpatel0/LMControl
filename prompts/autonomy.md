@@ -79,6 +79,7 @@ One object per turn. Every action except `done` requires a `history` field: what
 {"action": "stuck", "message": "string", "history": "string"}
 {"action": "retry", "message": "string", "history": "string"}
 {"action": "done"}
+{"action": "mcp_tool_call", "tool": "string", "arguments": {}, "history": "string"}
 ```
 
 ---
