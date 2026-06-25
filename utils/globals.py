@@ -68,4 +68,4 @@ ALLOWED_CONTROL_TYPES = {
 }
 import platform
 
-IS_RUNNING_WINDOWS = True if platform.system() is "Windows" else False
+IS_RUNNING_WINDOWS = platform.system() == "Windows"
