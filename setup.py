@@ -7,15 +7,31 @@ from pathlib import Path
 
 from settings.default import default_settings
 
+from utils.globals import IS_RUNNING_WINDOWS
+import platform
+
 
 class KodoSetup:
     def __init__(self) -> None:
         self.default_settings = copy.deepcopy(default_settings)
 
     def check_system_compatibility(self):
-        if sys.platform != "win32":
-            print("Kodo can only run under a Windows Environment")
-            sys.exit(1)
+        if not IS_RUNNING_WINDOWS:
+            print(f"""
+Kodo's UI Accessibility Tree Context Provider fetches raw UI components from active windows to help guide click and input targets.
+However this feature is only supported on Windows systems (currently running on {platform.system()}). This feature will be disabled.
+Other parts of Kodo will still continue to work, such as using screenshots to guide click targets, Kodo Skills and the use of MCPs.
+
+This mode still needs work and will be refined in later versions of Kodo.
+- Allowing shell access
+- Fetching equivalent UIA trees for macOS and Linux systems
+- Modifying system prompts to account for the system
+    - Removing references to Windows
+    - Telling Kodo to use skills and MCPs if Kodo is running in an environment where it has no access to the UI
+
+Press ENTER to continue with the setup process
+            """)
+            input()
 
     def run_setup_sequence(self):
         self.check_system_compatibility()
@@ -289,7 +305,28 @@ Screenshots are recommended
                 screenshot = True
                 break
             if choice == "n":
-                screenshot = False
+                if not IS_RUNNING_WINDOWS:
+                    print(
+                        "Kodo is not running under Windows, are you sure you want to disable screenshots, as the UI Tree Context Provider is not supported on Linux or macOS"
+                    )
+                    choice = (
+                        input(
+                            "Enable screenshots for Actor and Autonomy Modes? ([Y]es / [N]o):"
+                        )
+                        .lower()
+                        .strip()
+                    )
+
+                    if choice == "y":
+                        screenshot = True
+                    elif choice == "n":
+                        screenshot = False
+                    else:
+                        print("Please enter 'y' or 'n'")
+
+                    break
+                else:
+                    screenshot = False
                 break
             print("Please enter 'y' or 'n'")
 
