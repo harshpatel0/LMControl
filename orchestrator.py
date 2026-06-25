@@ -9,10 +9,11 @@ from utils.logger import logger
 from settings.settings import settings
 
 from models.model_definitions import SkillInstallationMode
-from skills.skill_orchestrator import Skills
 
 from mcp.types import CallToolResult, TextContent
 import copy
+
+from skills.skill_orchestrator import skill_orchestrator
 
 pc_actions = PCActions()
 
@@ -23,24 +24,8 @@ MAX_AUTONOMY_STEPS = settings.orchestrator.planner_architecture.max_autonomy_ste
 ACTION_SETTLE_TIME = settings.orchestrator.action_settle_time
 MAX_REPLAN_LOOP = settings.orchestrator.planner_architecture.max_replan_loop
 
-import asyncio
 
 # Register all MCPs
-from mcps.mcp_registry import mcp_registry
-from mcps.mcp_loop import run_async
-
-loop = asyncio.new_event_loop()
-
-with open("mcps/mcp_servers.json") as f:
-    mcp_config = json.load(f)
-
-
-for server in mcp_config["servers"]:
-    logger.info(f"Registering MCP server: {server['name']}")
-    run_async(mcp_registry.register(server["name"], server))
-    logger.info(f"Registered MCP server: {server['name']}")
-
-logger.debug(f"MCP Registered: {mcp_registry.get_tool_schemas()}")
 
 
 class ActionHandlers:
@@ -362,7 +347,7 @@ class AutonomyOrchestrator:
         self.additional_context = ""
         self.context_provider = ContextProvider()
         self.skill_installation_mode = SkillInstallationMode()
-        self.skill_orchestrator = Skills()
+        self.skill_orchestrator = skill_orchestrator
         self.hard_exit = False
         self.skills = ""
 

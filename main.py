@@ -6,6 +6,9 @@ import time
 import webbrowser
 from pathlib import Path
 import sys
+import bootstrapper
+
+bootstrapper.setup_mcps()
 
 from utils.globals import API_BIND_TO_ALL_IPS, API_PORT
 
