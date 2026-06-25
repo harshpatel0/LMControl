@@ -66,3 +66,6 @@ ALLOWED_CONTROL_TYPES = {
     "Thumb",
     "ProgressBar",
 }
+import platform
+
+IS_RUNNING_WINDOWS = True if platform.system() is "Windows" else False

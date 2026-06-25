@@ -13,6 +13,7 @@ from settings.settings import settings
 from utils.globals import (
     CONTEXT_PROVIDER_UI_DIFF_THRESHOLD_PERCENTAGE as THRESHOLD_PERCENTAGE,
     ALLOWED_CONTROL_TYPES,
+    IS_RUNNING_WINDOWS,
 )
 
 
@@ -180,10 +181,10 @@ class ContextProvider:
                 if win is None:
                     raise ValueError("No window found")
 
-                left = max(win.left, 0)
-                top = max(win.top, 0)
-                width = win.width
-                height = win.height
+                left = int(max(win.left, 0))
+                top = int(max(win.top, 0))
+                width = int(win.width)
+                height = int(win.height)
 
                 if width <= 0 or height <= 0:
                     raise ValueError("Window has zero size")
@@ -233,7 +234,7 @@ class ContextProvider:
 
 
 class UITreeHandler:
-    context_provider = None
+    context_provider: ContextProvider
 
     def __init__(self):
         self.context_provider = ContextProvider()
@@ -267,6 +268,9 @@ class UITreeHandler:
     def request_tree_diffs(self):
         if not settings.context_provider.provide_uia_tree:
             return "UIA Tree has been disabled"
+
+        if not IS_RUNNING_WINDOWS:
+            return "UIA Tree is only enabled for Windows PCs"
 
         active_window = self.context_provider.get_active_window()
         window_changed = active_window != self._last_active_window
