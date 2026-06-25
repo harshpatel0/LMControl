@@ -12,6 +12,7 @@ from models.model_definitions import SkillInstallationMode
 from skills.skill_orchestrator import Skills
 
 from mcp.types import CallToolResult, TextContent
+import copy
 
 pc_actions = PCActions()
 
@@ -566,6 +567,12 @@ Has any error occured? {action_result.isError}
                         skill_output = (
                             f"\n[Skill Result] stdout: {stdout} | stderr: {stderr}"
                         )
+
+                action_copy = copy.deepcopy(self.step_result)
+                action_copy.pop("history", None)
+                action_summary = f"Previous Called Action: [{json.dumps(action_copy)}]"
+
+                self.history = self.history + action_summary + skill_output + "\n"
 
 
 def run_externally(task: str, mode_override: str | None = None):
