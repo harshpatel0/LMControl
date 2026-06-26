@@ -184,8 +184,11 @@ Output of Iteration: {self.iterations}
                 time.sleep(settings.orchestrator.action_settle_time)
 
                 successful_run = False
-
-                if isinstance(action_result, dict):
+                if isinstance(action_result, str):
+                    self.additional_context = (
+                        self.additional_context + f"\n{action_result}"
+                    )
+                elif isinstance(action_result, dict):
                     self.action_handler.handle_skill_invocations(action_result)
                     successful_run = True
                 elif isinstance(action_result, CallToolResult):

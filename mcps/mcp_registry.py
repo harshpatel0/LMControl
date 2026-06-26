@@ -20,6 +20,14 @@ class MCPRegistry:
         server_name, _ = self._tools[tool_name]
         return await self._clients[server_name].call_tool(tool_name, arguments)
 
+    def check_tool(self, tool_name: str) -> bool:
+        tool_exists = tool_name in self._tools
+
+        if not tool_exists:
+            logger.warning(f"The LLM called a non existent tool: {tool_name}")
+
+        return tool_exists
+
     def get_tool_schemas(self) -> list[dict]:
         return [
             {

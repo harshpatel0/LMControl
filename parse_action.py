@@ -24,9 +24,14 @@ def parse_action(action):
 
     match action["action"]:
         case "mcp_tool_call":
+
             mcp_call = getattr(mcp_registry, "call", None) or getattr(
                 mcp_registry, "call_tool", None
             )
+
+            if not mcp_registry.check_tool(action["tool"]):
+                return f"The tool {action["tool"]} does not exist"
+
             if mcp_call is None:
                 raise AttributeError(
                     "mcps.mcp_registry has no callable 'call' or 'call_tool'"
@@ -127,4 +132,6 @@ def parse_action(action):
             logger.warning(f"Unknown action: {action['action']}")
             return_command = "RETRY"
 
+    if not skill_orchestrator.can_handle(action.get("action")):
+        return f"The skill {action.get("action")} does not exist."
     return return_command
