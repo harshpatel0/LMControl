@@ -95,7 +95,9 @@ class AnthropicProvider(ModelProvider):
             )
             call_kwargs["max_tokens"] = 16384
         if settings.model_providers.effort:
-            call_kwargs["output_config"] = {"effort": settings.model_providers.effort}
+            call_kwargs["output_config"] = {
+                "effort": settings.model_providers.anthropic.effort
+            }
 
         try:
             response = self._client.messages.create(**call_kwargs)

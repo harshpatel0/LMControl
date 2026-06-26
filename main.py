@@ -6,6 +6,8 @@ import time
 import webbrowser
 from pathlib import Path
 import sys
+import bootstrapper
+
 
 from utils.globals import API_BIND_TO_ALL_IPS, API_PORT
 
@@ -48,6 +50,8 @@ if __name__ == "__main__":
         setup.run_setup_sequence()
 
     _run_under_venv()
+
+    bootstrapper.setup_mcps()
 
     if "-t" in sys.argv:
         arguments = sys.argv.copy()

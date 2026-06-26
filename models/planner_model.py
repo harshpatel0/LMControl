@@ -3,7 +3,6 @@ import rootutils
 root = rootutils.setup_root(__file__, pythonpath=True)
 
 import json
-from context_provider import ContextProvider
 from models.model_definitions import PlannerModel, SkillInstallationMode
 from skills.skill_orchestrator import Skills
 import utils.utils as utils
@@ -16,9 +15,6 @@ from server.log_stream import web_emitter
 planner_model = PlannerModel()
 skill_orchestrator = Skills()
 skill_installation = SkillInstallationMode()
-
-context = ContextProvider()
-context.get_installed_apps()
 
 
 def make_plan(task: str):

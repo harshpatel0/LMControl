@@ -13,6 +13,7 @@ from settings.settings import settings
 from utils.globals import (
     CONTEXT_PROVIDER_UI_DIFF_THRESHOLD_PERCENTAGE as THRESHOLD_PERCENTAGE,
     ALLOWED_CONTROL_TYPES,
+    IS_RUNNING_WINDOWS,
 )
 
 
@@ -160,25 +161,6 @@ class ContextProvider:
         except Exception:
             return "Desktop"
 
-    def get_installed_apps(self):
-        if not self.installed_apps:
-            self.installed_apps = sorted(app.name for app in winapps.list_installed())
-
-        return self.installed_apps
-
-    def get_pinned_apps(self):
-        path = os.path.expandvars(
-            r"%AppData%\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar"
-        )
-        pinned_apps = [f.replace(".lnk", "") for f in os.listdir(path)]
-
-        try:
-            pinned_apps.remove("desktop.ini")
-        except Exception:
-            pass
-
-        return pinned_apps
-
     def get_screenshot(self, window_title: str | None = None):
         """
         Captures only the active window region.
@@ -199,10 +181,10 @@ class ContextProvider:
                 if win is None:
                     raise ValueError("No window found")
 
-                left = max(win.left, 0)
-                top = max(win.top, 0)
-                width = win.width
-                height = win.height
+                left = int(max(win.left, 0))
+                top = int(max(win.top, 0))
+                width = int(win.width)
+                height = int(win.height)
 
                 if width <= 0 or height <= 0:
                     raise ValueError("Window has zero size")
@@ -245,14 +227,13 @@ class ContextProvider:
             elements = self._get_elements_from_window(window)
 
             logger.debug(elements)
-            # return "\n".join(elements) if elements else "No UI elements found."
             return elements
         except Exception as e:
             return []
 
 
 class UITreeHandler:
-    context_provider = None
+    context_provider: ContextProvider
 
     def __init__(self):
         self.context_provider = ContextProvider()
@@ -287,6 +268,9 @@ class UITreeHandler:
         if not settings.context_provider.provide_uia_tree:
             return "UIA Tree has been disabled"
 
+        if not IS_RUNNING_WINDOWS:
+            return "UIA Tree is only enabled for Windows PCs"
+
         active_window = self.context_provider.get_active_window()
         window_changed = active_window != self._last_active_window
         self._last_active_window = active_window
@@ -308,7 +292,7 @@ class UITreeHandler:
 
         # Always send the full tree if the provider is not Ollama
 
-        if _get_active_provider != "ollama":
+        if _get_active_provider() != "ollama":
             self.current_tree = self.context_provider.get_ui_tree()
             logger.debug(
                 "Diffed UI Trees are unsupported for the current provider, only Ollama supports diffed trees, the full tree is being sent"

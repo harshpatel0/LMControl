@@ -221,11 +221,14 @@ class Skills:
         self._discover()
 
 
+skill_orchestrator = Skills()
+
 if __name__ == "__main__":
-    skills = Skills()
-    print(skills.list_actions())
-    print(skills.get_skills_summary())
-    print(skills.get_available_skills())
-    print(skills.can_handle("open_url"))
-    print(skills.load_all_requested_skills(["launch-windows-app"], "planner"))
-    print(skills.load_all_requested_skills(["launch-windows-app"], "actor"))
+    print(skill_orchestrator.list_actions())
+    print(skill_orchestrator.get_skills_summary())
+    print(skill_orchestrator.get_available_skills())
+    print(skill_orchestrator.can_handle("open_url"))
+    print(
+        skill_orchestrator.load_all_requested_skills(["launch-windows-app"], "planner")
+    )
+    print(skill_orchestrator.load_all_requested_skills(["launch-windows-app"], "actor"))

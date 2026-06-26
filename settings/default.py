@@ -55,6 +55,7 @@ default_settings = {
         },
         "autonomy_orchestrator": {
             "max_total_iterations": 50,
+            "no_skill_installation_mode": True,
         },
     },
     "context_provider": {

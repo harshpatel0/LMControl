@@ -13,6 +13,8 @@ from utils.logger import logger
 
 from settings.settings import settings
 
+from mcps.mcp_registry import mcp_registry
+
 skill_orchestrator = Skills()
 
 context_provider = ContextProvider()
@@ -55,7 +57,14 @@ class SkillInstallationMode:
     def run(self, task):
         system_prompt = Strings.SKILL_INSTALLATION_PROMPT
         system_prompt = (
-            system_prompt + "\n" + f"{skill_orchestrator.get_skills_summary()}"
+            system_prompt
+            + "\nHere are the available skills: "
+            + f"{skill_orchestrator.get_skills_summary()}"
+        )
+        system_prompt = (
+            system_prompt
+            + "\n Here are the installed MCP Servers: \n"
+            + f"{mcp_registry.get_tool_schemas()}"
         )
         user_prompt = f"Commence skill installation mode. Return a list of skills to install as per required output scheme that you might need to complete this task: {task}"
 
@@ -138,6 +147,9 @@ OS: {context_provider.WINDOWS_VERSION}
 Screen: {context_provider.screen_width}x{context_provider.screen_height}
 
 User Task: {task}
+
+# Registered MCP Servers
+{mcp_registry.get_tool_schemas()}
 """
 
         system_prompt = system_prompt + self.base_system_prompt
@@ -235,6 +247,9 @@ ControlType, name, x, y
 TASKBAR (located at the bottom of the screen, y ≈ {context_provider.screen_height - 20}): 
 Taskbar Elements
 {context_provider.get_taskbar_elements()}
+
+# Registered MCP Servers
+{mcp_registry.get_tool_schemas()}
 
 # Additional Context is provided below (if the orchestrator has anything to say)
 """
