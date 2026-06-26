@@ -4,7 +4,7 @@ import copy
 import models.actor_model as actor_model
 from parse_action import parse_action
 from context_provider import ContextProvider
-from action_handlers import ActionHandlers
+from orchestrators.action_handlers import ActionHandlers
 from skills.skill_orchestrator import skill_orchestrator
 from models.model_definitions import SkillInstallationMode
 from utils.logger import logger

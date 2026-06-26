@@ -2,7 +2,7 @@ import time
 import models.actor_model as actor_model
 from parse_action import parse_action
 from context_provider import ContextProvider
-from .action_handlers import ActionHandlers
+from orchestrators.action_handlers import ActionHandlers
 from utils.logger import logger
 from settings.settings import settings
 from mcp.types import CallToolResult, TextContent
