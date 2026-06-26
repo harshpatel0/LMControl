@@ -122,4 +122,10 @@ def do_step(
 
     web_emitter.action(action)
 
+    logger.info(
+        f"Tokens Used: Input: {chat_response.input_tokens} tokens, Output: {chat_response.output_tokens} tokens. Took {chat_response.total_duration_ms}"
+    )
+
+    logger.info(f"Thinking: \n\t{chat_response.thinking}")
+
     return action
