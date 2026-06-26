@@ -24,3 +24,7 @@ One valid JSON object. No preamble, no markdown fences.
   "skills": ["skill-id-1", "skill-id-2"]
 }
 ```
+
+## MCPs
+
+All MCPs are automatically installed by default, no need to call what MCPs is needed to complete the task. The MCPs are shown to you as reference. You should prioritise MCPs, so if a skill and MCP conflict in use cases, don't install the skill.

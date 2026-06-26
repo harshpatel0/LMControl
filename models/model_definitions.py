@@ -57,7 +57,14 @@ class SkillInstallationMode:
     def run(self, task):
         system_prompt = Strings.SKILL_INSTALLATION_PROMPT
         system_prompt = (
-            system_prompt + "\n" + f"{skill_orchestrator.get_skills_summary()}"
+            system_prompt
+            + "\nHere are the available skills: "
+            + f"{skill_orchestrator.get_skills_summary()}"
+        )
+        system_prompt = (
+            system_prompt
+            + "\n Here are the installed MCP Servers: \n"
+            + f"{mcp_registry.get_tool_schemas()}"
         )
         user_prompt = f"Commence skill installation mode. Return a list of skills to install as per required output scheme that you might need to complete this task: {task}"
 
