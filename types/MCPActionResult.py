@@ -3,5 +3,6 @@ from dataclasses import dataclass
 
 @dataclass
 class MCPActionResult:
-    output: list[str]
+    tool_name: str
+    output: str
     is_error: bool
