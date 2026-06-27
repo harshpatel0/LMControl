@@ -7,6 +7,7 @@ import venv
 import json
 
 from utils.globals import PYTHON_RUNNER_VENV_NAME
+from result_types.KodoSkillResult import KodoSkillResult
 
 VENV_DIR = os.path.join(
     os.path.dirname(os.path.dirname(__file__)), PYTHON_RUNNER_VENV_NAME
@@ -90,15 +91,17 @@ class PythonRunner:
     def prepare_environment(self, code):
         imports, error = self._extract_imports(code)
         if error:
-            return {"result": "IMPORT_DISCOVERY_ERROR", "stderr": error, "stdout": ""}
+            return KodoSkillResult(
+                result="IMPORT_DISCOVERY_ERROR", skill_output="", skill_errors=error
+            )
 
         install_error = self._install_packages(imports)
         if install_error:
-            return {
-                "result": "PACKAGE_INSTALL_ERROR",
-                "stderr": install_error,
-                "stdout": "",
-            }
+            return KodoSkillResult(
+                result="PACKAGE_INSTALL_ERROR",
+                skill_output="",
+                skill_errors=str(install_error),
+            )
 
         return None
 
@@ -110,7 +113,7 @@ class PythonRunner:
                 return val
         return None
 
-    def execute_code(self, command, timeout=None):
+    def execute_code(self, command, timeout=None) -> KodoSkillResult:
         if timeout is None:
             timeout = self._get_timeout()
         try:
@@ -134,13 +137,23 @@ class PythonRunner:
                 result = "SUCCESS"
             logger.info("Code ran successfully with no output.")
 
-            return {"result": result, "stderr": errors, "stdout": output}
+            return KodoSkillResult(
+                result=result, skill_output=output, skill_errors=errors
+            )
 
         except subprocess.TimeoutExpired as e:
-            return {"result": "TIMEOUT", "stderr": e.stderr.strip() if e.stderr else "No errors", "stdout": e.stdout.strip() if e.stdout else ""}
+            return KodoSkillResult(
+                result="TIMEOUT",
+                skill_output=output if output else "",
+                skill_errors=f"{errors}\tTimeout Exception: {str(e)}",
+            )
 
         except Exception as e:
-            return {"result": "PY_EXCEPTION", "stderr": str(e), "stdout": output}
+            return KodoSkillResult(
+                result="PY_EXCEPTION",
+                skill_output=output if output else "",
+                skill_errors=str(e),
+            )
 
     def run_skill_by_path(self, entry_path, args=None):
         with open(entry_path, "r", encoding="utf-8") as file:
@@ -171,7 +184,7 @@ class PythonRunner:
         command = [self.venv_python, entry_path, "--generate"]
         execution_result = self.execute_code(command)
 
-        return execution_result["stdout"]
+        return execution_result.skill_output
 
     def _extract_imports_fallback(self, code):
         """Regex-based import extraction when ast.parse fails."""
