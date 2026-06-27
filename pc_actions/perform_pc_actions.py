@@ -48,9 +48,3 @@ class PCActions:
         click_y_position = y_position - 96
 
         self.click(position_x=click_x_position, position_y=click_y_position)
-
-
-if __name__ == "__main__":
-    pc = PCActions()
-    time.sleep(5)
-    pc.dismiss_taskbar_thumbnail_overlay()
