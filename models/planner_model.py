@@ -4,7 +4,7 @@ root = rootutils.setup_root(__file__, pythonpath=True)
 
 import json
 from models.model_definitions import PlannerModel, SkillInstallationMode
-from skills.skill_orchestrator import Skills
+from skills.skill_orchestrator import skill_orchestrator
 import utils.utils as utils
 from utils.logger import logger
 
@@ -13,7 +13,6 @@ from settings.settings import settings
 from server.log_stream import web_emitter
 
 planner_model = PlannerModel()
-skill_orchestrator = Skills()
 skill_installation = SkillInstallationMode()
 
 
