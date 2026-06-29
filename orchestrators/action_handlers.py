@@ -13,9 +13,7 @@ MAX_REPLAN_LOOP = settings.orchestrator.planner_architecture.max_replan_loop
 from result_types import KodoSkillResult, PrimitiveActionResult, ActionResult
 
 
-def handle_proceed(
-    step_count: int, iterations: int, in_autonomy: bool
-) -> ActionResult:
+def handle_proceed(step_count: int, iterations: int, in_autonomy: bool) -> ActionResult:
     if not in_autonomy:
         return ActionResult(
             signal="BREAK",
@@ -37,9 +35,7 @@ def handle_done() -> ActionResult:
     return ActionResult(signal="BREAK", hard_exit=True)
 
 
-def handle_stuck(
-    action: dict, iterations: int, in_autonomy: bool
-) -> ActionResult:
+def handle_stuck(action: dict, iterations: int, in_autonomy: bool) -> ActionResult:
     if not in_autonomy:
         logger.info(
             f"The Actor Model claims it is stuck, running another iteration with added context {iterations+1}/{MAX_ITERATIONS_PER_STEP}"
@@ -105,10 +101,7 @@ def handle_retry(
     )
     try:
         new_context = (
-            additional_context
-            + f"{action['message']}"
-            + "\t"
-            + f"{error_message}"
+            additional_context + f"{action['message']}" + "\t" + f"{error_message}"
         )
     except Exception:
         new_context = (
@@ -156,8 +149,7 @@ def handle_skill_invocations(
     elif action_result_type == "TIMEOUT":
         return ActionResult(
             signal="CONTINUE",
-            additional_context=additional_context
-            + f"""
+            additional_context=additional_context + f"""
 The code/skill took too long to run and was killed prematurely. Here are the logs of its output.
 
 ## Output
@@ -165,8 +157,7 @@ The code/skill took too long to run and was killed prematurely. Here are the log
 
 ## Errors
 {action_result_stderr}
-"""
-            + "\n",
+""" + "\n",
         )
 
     elif action_result_type == "PY_EXCEPTION":
@@ -204,9 +195,7 @@ def handle_mcp_tool_call_result(action_result: CallToolResult) -> ActionResult:
     logger.debug(msg=action_result)
 
     text_output = [
-        block.text
-        for block in action_result.content
-        if isinstance(block, TextContent)
+        block.text for block in action_result.content if isinstance(block, TextContent)
     ]
 
     new_context = f"""
@@ -232,27 +221,39 @@ def call_action(
     if replan_history is None:
         replan_history = []
 
-    result = parse_action(action=action)
+    parse_result = parse_action(action=action)
 
-    if isinstance(result, PrimitiveActionResult):
-        command = result.command
+    if isinstance(parse_result, PrimitiveActionResult):
+        command = parse_result.command
         if command == "PROCEED":
-            return handle_proceed(step_count, iterations, in_autonomy)
+            action_result = handle_proceed(step_count, iterations, in_autonomy)
         elif command == "DONE":
-            return handle_done()
+            action_result = handle_done()
         elif command == "STUCK":
-            return handle_stuck(action, iterations, in_autonomy)
+            action_result = handle_stuck(action, iterations, in_autonomy)
         elif command == "REPLAN":
             next_action = action.get("next", "")
-            return handle_replan(next_action, replan_history, additional_context)
+            action_result = handle_replan(
+                next_action, replan_history, additional_context
+            )
         elif command == "RETRY":
-            return handle_retry(additional_context, result.error_message, action, iterations)
+            action_result = handle_retry(
+                additional_context, parse_result.error_message, action, iterations
+            )
+        else:
+            raise NotImplementedError(f"Unexpected primitive command: {command}")
 
-    if isinstance(result, KodoSkillResult):
-        return handle_skill_invocations(result, additional_context, in_autonomy, step_count)
+    elif isinstance(parse_result, KodoSkillResult):
+        action_result = handle_skill_invocations(
+            parse_result, additional_context, in_autonomy, step_count
+        )
 
-    if isinstance(result, CallToolResult):
-        return handle_mcp_tool_call_result(result)
+    elif isinstance(parse_result, CallToolResult):
+        action_result = handle_mcp_tool_call_result(parse_result)
 
-    logger.warning("Unexpected result path in call_action")
-    raise NotImplementedError(f"Unexpected result type: {type(result)}")
+    else:
+        logger.warning("Unexpected result path in call_action")
+        raise NotImplementedError(f"Unexpected result type: {type(parse_result)}")
+
+    action_result.result = parse_result
+    return action_result

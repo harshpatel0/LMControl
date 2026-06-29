@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 
 @dataclass
@@ -11,3 +11,4 @@ class ActionResult:
     additional_context: str | None = None
     hard_exit: bool | None = None
     temp_task: str | None = None
+    result: Any = None
