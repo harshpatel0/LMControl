@@ -52,9 +52,8 @@ class Skills:
         if skill_metadata["dynamic_context"]:
             skill_entry_point = skill_metadata["entry"]
             output = self._runner.run_skill_context_generator(skill_entry_point)
-            logger.debug(f"Output from generator for {skill}")
 
-            output = json.loads(output)
+            output = json.loads(output.skill_output)
             skill_definition = output[consumer]
             return skill_definition
 

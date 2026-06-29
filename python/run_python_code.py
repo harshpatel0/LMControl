@@ -172,7 +172,7 @@ class PythonRunner:
         execution_result = self.execute_code(command)
         return execution_result
 
-    def run_skill_context_generator(self, entry_path):
+    def run_skill_context_generator(self, entry_path) -> KodoSkillResult:
         with open(entry_path, "r", encoding="utf-8") as file:
             skill_code = file.read()
 
@@ -184,7 +184,7 @@ class PythonRunner:
         command = [self.venv_python, entry_path, "--generate"]
         execution_result = self.execute_code(command)
 
-        return execution_result.skill_output
+        return execution_result
 
     def _extract_imports_fallback(self, code):
         """Regex-based import extraction when ast.parse fails."""
