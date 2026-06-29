@@ -1,16 +1,12 @@
 import time
-import json
-import copy
 import models.actor_model as actor_model
-from orchestrators.parse_action import parse_action
 from context_provider import ContextProvider
-from orchestrators.action_handlers import ActionHandlers
+from orchestrators.action_handlers import call_action
 from skills.skill_orchestrator import skill_orchestrator
 from models.model_definitions import SkillInstallationMode
 from utils.logger import logger
 from settings.settings import settings
-
-from mcp.types import CallToolResult, TextContent
+from result_types import ActionResult, KodoSkillResult
 
 
 class AutonomyOrchestrator:
@@ -30,14 +26,23 @@ class AutonomyOrchestrator:
         self.last_action = None
 
         self.installed_skills = []
+        self.step_count = 0
+        self.replan_history = []
+        self.temp_task = None
 
-        self.action_handler = ActionHandlers(orchestrator=self, in_autonomy=True)
-        self.handlers = {
-            "PROCEED": self.action_handler.handleProceed,
-            "DONE": self.action_handler.handleDone,
-            "RETRY": self.action_handler.handleRetry,
-            "STUCK": self.action_handler.handleStuck,
-        }
+    def _apply(self, ar: ActionResult) -> None:
+        if ar.step_count is not None:
+            self.step_count = ar.step_count
+        if ar.iterations is not None:
+            self.iterations = ar.iterations
+        if ar.replan_history is not None:
+            self.replan_history = ar.replan_history
+        if ar.additional_context is not None:
+            self.additional_context = ar.additional_context
+        if ar.hard_exit is not None:
+            self.hard_exit = ar.hard_exit
+        if ar.temp_task is not None:
+            self.temp_task = ar.temp_task
 
     def run_skill_installation_mode(self):
         actor_skills, installed_skills = self.skill_installation_mode.run(self.task)
@@ -169,50 +174,11 @@ History (truncated):
                 )
 
             else:
-                action_result = parse_action(self.step_result)
-                logger.info(f"""
-Output of Iteration: {self.iterations}
-
-{action_result}
-""")
+                ar = call_action(
+                    action=self.step_result,
+                    iterations=self.iterations,
+                    in_autonomy=True,
+                    additional_context=self.additional_context,
+                )
+                self._apply(ar)
                 time.sleep(settings.orchestrator.action_settle_time)
-
-                successful_run = False
-                if isinstance(action_result, str):
-                    self.additional_context = (
-                        self.additional_context + f"\n{action_result}"
-                    )
-                elif isinstance(action_result, dict):
-                    self.action_handler.handle_skill_invocations(action_result)
-                    successful_run = True
-                elif isinstance(action_result, CallToolResult):
-                    self.action_handler.handle_mcp_tool_call_result(action_result)
-                    successful_run = True
-                elif action_result in self.handlers.keys():
-                    # mcp_tool_call is handled as a base action, and so it does not need a separeate invocation, its invocation is in parse_action.py
-                    handler = self.handlers[action_result]
-                    handler()
-                    successful_run = True
-                else:
-                    logger.warning(f"Unhandled action result: {action_result}")
-                    self.additional_context = (
-                        self.additional_context
-                        + f"\n Unhandled action result: {action_result}. You may have hallucinated it. Proceeding without handling it, and history not appended."
-                    )
-
-            if successful_run:
-                skill_output = ""
-
-                if isinstance(action_result, dict):
-                    stdout = action_result.get("stdout", "")
-                    stderr = action_result.get("stderr", "")
-                    if stdout or stderr:
-                        skill_output = (
-                            f"\n[Skill Result] stdout: {stdout} | stderr: {stderr}"
-                        )
-
-                action_copy = copy.deepcopy(self.step_result)
-                action_copy.pop("history", None)
-                action_summary = f"Previous Called Action: [{json.dumps(action_copy)}]"
-
-                self.history = self.history + action_summary + skill_output + "\n"
