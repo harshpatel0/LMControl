@@ -32,6 +32,7 @@ class StepOrchestrator:
         self.context_provider = ContextProvider()
 
         self.temp_task = None
+        self.step_result: dict = {}
 
     def _apply(self, ar: ActionResult) -> None:
         if ar.step_count is not None:
@@ -81,7 +82,7 @@ class StepOrchestrator:
                     break
 
                 last_action_info = ""
-                if getattr(self, "step_result", {}) and self.step_result.get("action"):
+                if self.step_result.get("action"):
                     last_action_info = (
                         f"[LAST ACTION] action='{self.step_result['action']}' "
                         f"args={{{', '.join(f'{k}={v!r}' for k, v in self.step_result.items() if k != 'action')}}}\n"
