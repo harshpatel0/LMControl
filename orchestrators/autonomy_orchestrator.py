@@ -4,9 +4,36 @@ from context_provider import ContextProvider
 from orchestrators.action_handlers import call_action
 from skills.skill_orchestrator import skill_orchestrator
 from models.model_definitions import SkillInstallationMode
-from utils.logger import logger
+from utils import logger
 from settings.settings import settings
 from result_types import ActionResult, KodoSkillResult
+
+from utils import estimate_tokens
+
+
+class History:
+    def __init__(self) -> None:
+        self.history: list[str] = []
+
+    def truncate_history(self, max_tokens=400) -> list[str]:
+        if estimate_tokens("\n".join(self.history)) <= max_tokens:
+            return self.history
+
+        trimmed = []
+
+        for entry in reversed(self.history):
+            candidate = "\n".join([entry] + trimmed)
+            if len(candidate) > max_tokens:
+                break
+            trimmed.insert(0, entry)
+        return trimmed
+
+    def __str__(self) -> str:
+        history_list = self.truncate_history()
+        return "\n".join(history_list)
+
+    def append(self, text: str) -> None:
+        self.history.append(text)
 
 
 class AutonomyOrchestrator:
@@ -21,7 +48,7 @@ class AutonomyOrchestrator:
         self.skills = ""
 
         self.punishment_tally = ""
-        self.history = ""
+        self.history = History()
         self.runtime_skills = None
         self.last_action = None
 
@@ -29,6 +56,7 @@ class AutonomyOrchestrator:
         self.step_count = 0
         self.replan_history = []
         self.temp_task = None
+        self.step_result: dict = {}
 
     def _apply(self, ar: ActionResult) -> None:
         if ar.step_count is not None:
@@ -44,6 +72,36 @@ class AutonomyOrchestrator:
         if ar.temp_task is not None:
             self.temp_task = ar.temp_task
 
+    def _cleanup(self) -> None:
+        self.temp_task = None
+        self.additional_context = ""
+
+    def _handle_skill_installation(self, requested_skills: list) -> None:
+        skills_not_installed = [
+            s for s in requested_skills if s not in self.installed_skills
+        ]
+        skills_already_installed = [
+            s for s in requested_skills if s not in skills_not_installed
+        ]
+        installable = [
+            s for s in skills_not_installed if self.skill_orchestrator.has_skill(s)
+        ]
+        unresolvable = [s for s in requested_skills if s not in installable]
+
+        if unresolvable:
+            logger.warning(f"Requested skills not found: {unresolvable}")
+            self.additional_context += f"\nThe following requested skills could not be found: {unresolvable}. Proceed without them."
+
+        if skills_already_installed:
+            logger.warning(
+                f"Not installing: {skills_already_installed}, already installed"
+            )
+            self.additional_context += f"\n The following skills are already installed: {skills_already_installed}, here are all available actions for a refresher: {self.skill_orchestrator.list_actions()}"
+
+        self.runtime_skills = self.skill_orchestrator.load_all_requested_skills(
+            installable, "actor"
+        )
+
     def run_skill_installation_mode(self):
         actor_skills, installed_skills = self.skill_installation_mode.run(self.task)
 
@@ -55,27 +113,8 @@ class AutonomyOrchestrator:
         else:
             self.installed_skills = [installed_skills]
 
-    def _truncate_history(self, history: str, max_chars: int = 4000) -> str:
-        """Keep only the most recent entries of the history string, dropping oldest.
-        Uses ~4 chars/token heuristic to stay within context window budgets.
-        """
-        if not history or len(history) <= max_chars:
-            return history
-        entries = history.strip().split("\n")
-        trimmed = []
-        for entry in reversed(entries):
-            candidate = "\n".join([entry] + trimmed)
-            if len(candidate) > max_chars:
-                break
-            trimmed.insert(0, entry)
-        return "\n".join(trimmed) if trimmed else ""
-
     def run(self):
         while not self.hard_exit:
-
-            # Truncate history to prevent unbounded context growth
-            truncated_history = self._truncate_history(self.history)
-
             max_iter = settings.orchestrator.autonomy_orchestrator.max_total_iterations
 
             logger.info(f"""
@@ -90,14 +129,14 @@ Skills:
 {self.skills}
 
 History (truncated):
-{truncated_history}
+{str(self.history)}
 """)
 
             if max_iter > 0 and self.iterations >= max_iter:
                 self.hard_exit = True
 
             last_action_info = ""
-            if getattr(self, "step_result", {}) and self.step_result.get("action"):
+            if self.step_result.get("action"):
                 last_action_info = (
                     f"[LAST ACTION] action='{self.step_result['action']}' "
                     f"args={{{', '.join(f'{k}={v!r}' for k, v in self.step_result.items() if k != 'action')}}}\n"
@@ -128,50 +167,8 @@ History (truncated):
 
             self.iterations += 1
 
-            if self.step_result.get("install_skills", None):
-                skills_requested = self.step_result["skills"]
-                skills_not_installed = [
-                    skill
-                    for skill in skills_requested
-                    if skill not in self.installed_skills
-                ]
-
-                skills_already_installed = [
-                    skill
-                    for skill in skills_requested
-                    if skill not in skills_not_installed
-                ]
-
-                installable_skills = [
-                    skill
-                    for skill in skills_not_installed
-                    if self.skill_orchestrator.has_skill(skill)
-                ]
-                unresolvable = [
-                    skill
-                    for skill in skills_requested
-                    if skill not in installable_skills
-                ]
-
-                if unresolvable:
-                    logger.warning(f"Requested skills not found: {unresolvable}")
-                    self.additional_context = (
-                        self.additional_context
-                        + f"\nThe following requested skills could not be found: {unresolvable}. Proceed without them."
-                    )
-
-                if skills_already_installed:
-                    logger.warning(
-                        f"Not installing: {skills_already_installed}, already installed"
-                    )
-                    self.additional_context = (
-                        self.additional_context
-                        + f"\n The following skills are already installed: {skills_already_installed}, here are all available actions for a refresher: {self.skill_orchestrator.list_actions()}"
-                    )
-
-                self.runtime_skills = self.skill_orchestrator.load_all_requested_skills(
-                    installable_skills, "actor"
-                )
+            if self.step_result.get("install_skills"):
+                self._handle_skill_installation(self.step_result["skills"])
 
             else:
                 ar = call_action(
@@ -180,5 +177,11 @@ History (truncated):
                     in_autonomy=True,
                     additional_context=self.additional_context,
                 )
+                self._cleanup()
                 self._apply(ar)
                 time.sleep(settings.orchestrator.action_settle_time)
+
+            # Append to history
+
+            model_provided_history = self.step_result.get("history", "None")
+            self.history.append(model_provided_history)
