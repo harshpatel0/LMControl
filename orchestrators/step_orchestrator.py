@@ -1,11 +1,10 @@
 import time
 import models.actor_model as actor_model
-from orchestrators.parse_action import parse_action
 from context_provider import ContextProvider
-from orchestrators.action_handlers import ActionHandlers
+from orchestrators.action_handlers import call_action
 from utils.logger import logger
 from settings.settings import settings
-from mcp.types import CallToolResult, TextContent
+from result_types import ActionResult
 
 MAX_ITERATIONS_PER_STEP = (
     settings.orchestrator.planner_architecture.max_iterations_per_step
@@ -31,17 +30,22 @@ class StepOrchestrator:
         self.hard_exit = False
 
         self.context_provider = ContextProvider()
-        self.action_handler = ActionHandlers(orchestrator=self)
 
         self.temp_task = None
 
-        self.handlers = {
-            "PROCEED": self.action_handler.handleProceed,
-            "DONE": self.action_handler.handleDone,
-            "STUCK": self.action_handler.handleStuck,
-            "REPLAN": self.action_handler.handleReplan,
-            "RETRY": self.action_handler.handleRetry,
-        }
+    def _apply(self, ar: ActionResult) -> None:
+        if ar.step_count is not None:
+            self.step_count = ar.step_count
+        if ar.iterations is not None:
+            self.iterations = ar.iterations
+        if ar.replan_history is not None:
+            self.replan_history = ar.replan_history
+        if ar.additional_context is not None:
+            self.additional_context = ar.additional_context
+        if ar.hard_exit is not None:
+            self.hard_exit = ar.hard_exit
+        if ar.temp_task is not None:
+            self.temp_task = ar.temp_task
 
     def run(self):
         while not self.hard_exit:
@@ -99,28 +103,18 @@ class StepOrchestrator:
                         "action": "retry",
                         "message": f"Step execution error: {e}",
                     }
-                action_result = parse_action(self.step_result)
 
-                logger.debug(f"Action Result: {action_result}")
-                time.sleep(settings.orchestrator.action_settle_time)
+                time.sleep(ACTION_SETTLE_TIME)
 
-                signal = None
+                ar = call_action(
+                    action=self.step_result,
+                    step_count=self.step_count,
+                    iterations=self.iterations,
+                    in_autonomy=self.in_autonomy,
+                    additional_context=self.additional_context,
+                    replan_history=self.replan_history,
+                )
+                self._apply(ar)
 
-                if isinstance(action_result, str):
-                    handler = self.handlers[action_result]
-                    if action_result == "REPLAN":
-                        handler(self.step_result)
-                    else:
-                        signal = handler()
-                elif isinstance(action_result, dict):
-                    # Kodo skill was executed
-                    signal = self.action_handler.handle_skill_invocations(action_result)
-                elif isinstance(action_result, CallToolResult):
-                    signal = self.action_handler.handle_mcp_tool_call_result(
-                        action_result
-                    )
-
-                if signal == "BREAK":
+                if ar.signal == "BREAK":
                     break
-                if signal == "CONTINUE" or signal == None:
-                    continue
