@@ -4,6 +4,18 @@ Provides full browser control via the `chrome-devtools` MCP server. Covers navig
 
 ---
 
+## Calling Convention
+
+Every tool call below must be wrapped in the dispatcher's `mcp_tool_call` envelope:
+
+```json
+{"action": "mcp_tool_call", "tool": "<tool_name>", "arguments": {...}, "history": "<what you did>"}
+```
+
+The JSON shown under each tool heading is the `arguments` payload only — never emit it as a top-level action.
+
+---
+
 ## Snapshot First
 
 Always call `take_snapshot` before interacting with any element. Snapshots provide `uid` values required by all interaction tools. **UIDs expire after every navigation — re-snapshot after any page change.**
@@ -17,10 +29,10 @@ Always call `take_snapshot` before interacting with any element. Snapshots provi
 Navigate to a URL, or go back, forward, or reload.
 
 ```json
-{"type": "url", "url": "https://example.com"}
-{"type": "back"}
-{"type": "forward"}
-{"type": "reload"}
+{"action": "mcp_tool_call", "tool": "navigate_page", "arguments": {"type": "url", "url": "https://example.com"}, "history": "Navigated to https://example.com"}
+{"action": "mcp_tool_call", "tool": "navigate_page", "arguments": {"type": "back"}, "history": "Navigated back"}
+{"action": "mcp_tool_call", "tool": "navigate_page", "arguments": {"type": "forward"}, "history": "Navigated forward"}
+{"action": "mcp_tool_call", "tool": "navigate_page", "arguments": {"type": "reload"}, "history": "Reloaded the page"}
 ```
 
 - Use `type=url` with a `url` value to navigate to a page.
@@ -31,7 +43,7 @@ Navigate to a URL, or go back, forward, or reload.
 Open a URL in a new tab.
 
 ```json
-{"url": "https://example.com"}
+{"action": "mcp_tool_call", "tool": "new_page", "arguments": {"url": "https://example.com"}, "history": "Opened https://example.com in a new tab"}
 ```
 
 - Use `background=true` to open without switching focus.
@@ -41,7 +53,9 @@ Open a URL in a new tab.
 Manage open tabs.
 
 ```json
-{"pageId": 1}
+{"action": "mcp_tool_call", "tool": "list_pages", "arguments": {}, "history": "Listed open pages"}
+{"action": "mcp_tool_call", "tool": "select_page", "arguments": {"pageId": 1}, "history": "Switched to page 1"}
+{"action": "mcp_tool_call", "tool": "close_page", "arguments": {"pageId": 1}, "history": "Closed page 1"}
 ```
 
 - Always call `list_pages` before `select_page` or `close_page` to get valid page IDs.
@@ -56,7 +70,7 @@ Manage open tabs.
 Click an element by its uid.
 
 ```json
-{"uid": "<uid>"}
+{"action": "mcp_tool_call", "tool": "click", "arguments": {"uid": "<uid>"}, "history": "Clicked element <uid>"}
 ```
 
 - Use `dblClick=true` for double-clicks.
@@ -67,7 +81,7 @@ Click an element by its uid.
 Type into an input, textarea, or select a dropdown option.
 
 ```json
-{"uid": "<uid>", "value": "text to enter"}
+{"action": "mcp_tool_call", "tool": "fill", "arguments": {"uid": "<uid>", "value": "text to enter"}, "history": "Filled element <uid> with text"}
 ```
 
 - For checkboxes and toggles: `"value": "true"` or `"value": "false"`.
@@ -79,11 +93,16 @@ Fill multiple form fields in a single call. **Prefer this over multiple `fill` o
 
 ```json
 {
-  "elements": [
-    {"uid": "<uid>", "value": "username"},
-    {"uid": "<uid>", "value": "password"},
-    {"uid": "<uid>", "value": "true"}
-  ]
+  "action": "mcp_tool_call",
+  "tool": "fill_form",
+  "arguments": {
+    "elements": [
+      {"uid": "<uid>", "value": "username"},
+      {"uid": "<uid>", "value": "password"},
+      {"uid": "<uid>", "value": "true"}
+    ]
+  },
+  "history": "Filled login form fields"
 }
 ```
 
@@ -92,7 +111,7 @@ Fill multiple form fields in a single call. **Prefer this over multiple `fill` o
 Type text into a previously focused element using keyboard input.
 
 ```json
-{"text": "text to type", "submitKey": "Enter"}
+{"action": "mcp_tool_call", "tool": "type_text", "arguments": {"text": "text to type", "submitKey": "Enter"}, "history": "Typed text and submitted with Enter"}
 ```
 
 - Use only when `fill` cannot be used (e.g. rich text editors, custom inputs).
@@ -103,9 +122,9 @@ Type text into a previously focused element using keyboard input.
 Send a key or key combination.
 
 ```json
-{"key": "Control+A"}
-{"key": "Enter"}
-{"key": "Control+Shift+R"}
+{"action": "mcp_tool_call", "tool": "press_key", "arguments": {"key": "Control+A"}, "history": "Pressed Control+A"}
+{"action": "mcp_tool_call", "tool": "press_key", "arguments": {"key": "Enter"}, "history": "Pressed Enter"}
+{"action": "mcp_tool_call", "tool": "press_key", "arguments": {"key": "Control+Shift+R"}, "history": "Pressed Control+Shift+R"}
 ```
 
 - Use for keyboard shortcuts or navigation keys not achievable via `fill` or `type_text`.
@@ -115,7 +134,7 @@ Send a key or key combination.
 Hover over an element.
 
 ```json
-{"uid": "<uid>"}
+{"action": "mcp_tool_call", "tool": "hover", "arguments": {"uid": "<uid>"}, "history": "Hovered over element <uid>"}
 ```
 
 - Use to trigger tooltips or reveal hover-dependent UI before interacting.
@@ -125,7 +144,7 @@ Hover over an element.
 Drag one element onto another.
 
 ```json
-{"from_uid": "<uid>", "to_uid": "<uid>"}
+{"action": "mcp_tool_call", "tool": "drag", "arguments": {"from_uid": "<uid>", "to_uid": "<uid>"}, "history": "Dragged element to target"}
 ```
 
 ### upload_file
@@ -133,7 +152,7 @@ Drag one element onto another.
 Upload a file via a file input element.
 
 ```json
-{"uid": "<uid>", "filePath": "C:\\Users\\harshpatel\\Documents\\file.pdf"}
+{"action": "mcp_tool_call", "tool": "upload_file", "arguments": {"uid": "<uid>", "filePath": "C:\\Users\\harshpatel\\Documents\\file.pdf"}, "history": "Uploaded file.pdf"}
 ```
 
 ### handle_dialog
@@ -141,8 +160,8 @@ Upload a file via a file input element.
 Handle a browser dialog (alert, confirm, prompt).
 
 ```json
-{"action": "accept"}
-{"action": "dismiss", "promptText": "response text"}
+{"action": "mcp_tool_call", "tool": "handle_dialog", "arguments": {"action": "accept"}, "history": "Accepted dialog"}
+{"action": "mcp_tool_call", "tool": "handle_dialog", "arguments": {"action": "dismiss", "promptText": "response text"}, "history": "Dismissed dialog with response text"}
 ```
 
 - Call this immediately when a dialog is triggered.
@@ -152,7 +171,7 @@ Handle a browser dialog (alert, confirm, prompt).
 Wait for specific text to appear on the page.
 
 ```json
-{"text": ["Login successful", "Welcome"], "timeout": 5000}
+{"action": "mcp_tool_call", "tool": "wait_for", "arguments": {"text": ["Login successful", "Welcome"], "timeout": 5000}, "history": "Waited for login confirmation text"}
 ```
 
 - Resolves when **any** value in the list appears.
@@ -167,8 +186,8 @@ Wait for specific text to appear on the page.
 Take an accessibility tree snapshot of the current page. Returns elements with their `uid` values.
 
 ```json
-{}
-{"verbose": true}
+{"action": "mcp_tool_call", "tool": "take_snapshot", "arguments": {}, "history": "Took accessibility snapshot"}
+{"action": "mcp_tool_call", "tool": "take_snapshot", "arguments": {"verbose": true}, "history": "Took verbose accessibility snapshot"}
 ```
 
 - **Always call this before any interaction.**
@@ -180,8 +199,8 @@ Take an accessibility tree snapshot of the current page. Returns elements with t
 Execute a JavaScript function in the current page context.
 
 ```json
-{"function": "() => { return document.title; }"}
-{"function": "() => { return document.querySelectorAll('a').length; }"}
+{"action": "mcp_tool_call", "tool": "evaluate_script", "arguments": {"function": "() => { return document.title; }"}, "history": "Read document title via script"}
+{"action": "mcp_tool_call", "tool": "evaluate_script", "arguments": {"function": "() => { return document.querySelectorAll('a').length; }"}, "history": "Counted links via script"}
 ```
 
 - Returns JSON-serializable values only.
@@ -197,9 +216,9 @@ Execute a JavaScript function in the current page context.
 Capture a screenshot of the page or a specific element.
 
 ```json
-{}
-{"uid": "<uid>"}
-{"fullPage": true, "filePath": "C:\\Users\\harshpatel\\Desktop\\screenshot.png"}
+{"action": "mcp_tool_call", "tool": "take_screenshot", "arguments": {}, "history": "Took screenshot"}
+{"action": "mcp_tool_call", "tool": "take_screenshot", "arguments": {"uid": "<uid>"}, "history": "Took screenshot of element <uid>"}
+{"action": "mcp_tool_call", "tool": "take_screenshot", "arguments": {"fullPage": true, "filePath": "C:\\Users\\harshpatel\\Desktop\\screenshot.png"}, "history": "Saved full-page screenshot to disk"}
 ```
 
 - Use for **visual verification only** — not for element targeting (use `take_snapshot` for that).
@@ -215,8 +234,8 @@ Capture a screenshot of the page or a specific element.
 List all network requests since the last navigation.
 
 ```json
-{}
-{"resourceTypes": ["fetch", "xhr"], "pageSize": 20}
+{"action": "mcp_tool_call", "tool": "list_network_requests", "arguments": {}, "history": "Listed network requests"}
+{"action": "mcp_tool_call", "tool": "list_network_requests", "arguments": {"resourceTypes": ["fetch", "xhr"], "pageSize": 20}, "history": "Listed fetch/xhr network requests"}
 ```
 
 - Filter by `resourceTypes` to reduce noise (e.g. `"fetch"`, `"xhr"`, `"document"`, `"script"`).
@@ -226,8 +245,8 @@ List all network requests since the last navigation.
 Get full details of a specific request including headers and body.
 
 ```json
-{"reqid": 5}
-{"reqid": 5, "responseFilePath": "C:\\Users\\harshpatel\\Documents\\response.json"}
+{"action": "mcp_tool_call", "tool": "get_network_request", "arguments": {"reqid": 5}, "history": "Fetched details for request 5"}
+{"action": "mcp_tool_call", "tool": "get_network_request", "arguments": {"reqid": 5, "responseFilePath": "C:\\Users\\harshpatel\\Documents\\response.json"}, "history": "Saved response body for request 5"}
 ```
 
 - Use `reqid` from `list_network_requests`.
@@ -238,8 +257,8 @@ Get full details of a specific request including headers and body.
 Inspect browser console output.
 
 ```json
-{"types": ["error", "warning"]}
-{"msgid": 3}
+{"action": "mcp_tool_call", "tool": "list_console_messages", "arguments": {"types": ["error", "warning"]}, "history": "Listed console errors and warnings"}
+{"action": "mcp_tool_call", "tool": "get_console_message", "arguments": {"msgid": 3}, "history": "Fetched console message 3"}
 ```
 
 - Filter by `types`: `"log"`, `"error"`, `"warning"`, `"info"`.
@@ -253,7 +272,7 @@ Inspect browser console output.
 Record a performance trace.
 
 ```json
-{"reload": true, "autoStop": true}
+{"action": "mcp_tool_call", "tool": "performance_start_trace", "arguments": {"reload": true, "autoStop": true}, "history": "Started performance trace"}
 ```
 
 - Navigate to the target URL **before** starting the trace.
@@ -264,7 +283,7 @@ Record a performance trace.
 Get detailed analysis of a specific performance insight from a trace.
 
 ```json
-{"insightSetId": "<id>", "insightName": "LCPBreakdown"}
+{"action": "mcp_tool_call", "tool": "performance_analyze_insight", "arguments": {"insightSetId": "<id>", "insightName": "LCPBreakdown"}, "history": "Analyzed LCP breakdown insight"}
 ```
 
 - Use IDs returned by `performance_start_trace`.
@@ -274,8 +293,8 @@ Get detailed analysis of a specific performance insight from a trace.
 Run a Lighthouse audit for accessibility, SEO, and best practices.
 
 ```json
-{"mode": "navigation", "device": "desktop"}
-{"mode": "snapshot"}
+{"action": "mcp_tool_call", "tool": "lighthouse_audit", "arguments": {"mode": "navigation", "device": "desktop"}, "history": "Ran navigation Lighthouse audit"}
+{"action": "mcp_tool_call", "tool": "lighthouse_audit", "arguments": {"mode": "snapshot"}, "history": "Ran snapshot Lighthouse audit"}
 ```
 
 - `navigation` reloads the page before auditing.
@@ -291,10 +310,10 @@ Run a Lighthouse audit for accessibility, SEO, and best practices.
 Emulate device, network, geolocation, or viewport conditions.
 
 ```json
-{"viewport": "375x812x2,mobile,touch"}
-{"colorScheme": "dark"}
-{"networkConditions": "Slow 3G"}
-{"geolocation": "51.5074,-0.1278"}
+{"action": "mcp_tool_call", "tool": "emulate", "arguments": {"viewport": "375x812x2,mobile,touch"}, "history": "Emulated mobile viewport"}
+{"action": "mcp_tool_call", "tool": "emulate", "arguments": {"colorScheme": "dark"}, "history": "Emulated dark color scheme"}
+{"action": "mcp_tool_call", "tool": "emulate", "arguments": {"networkConditions": "Slow 3G"}, "history": "Emulated Slow 3G network"}
+{"action": "mcp_tool_call", "tool": "emulate", "arguments": {"geolocation": "51.5074,-0.1278"}, "history": "Emulated geolocation"}
 ```
 
 - Omit a parameter to clear/reset that emulation.
@@ -305,7 +324,7 @@ Emulate device, network, geolocation, or viewport conditions.
 Resize the browser window.
 
 ```json
-{"width": 1280, "height": 800}
+{"action": "mcp_tool_call", "tool": "resize_page", "arguments": {"width": 1280, "height": 800}, "history": "Resized browser window"}
 ```
 
 ---
@@ -317,7 +336,7 @@ Resize the browser window.
 Capture a JavaScript heap snapshot for memory leak analysis.
 
 ```json
-{"filePath": "C:\\Users\\harshpatel\\Documents\\heap.heapsnapshot"}
+{"action": "mcp_tool_call", "tool": "take_heapsnapshot", "arguments": {"filePath": "C:\\Users\\harshpatel\\Documents\\heap.heapsnapshot"}, "history": "Captured heap snapshot"}
 ```
 
 - Open the `.heapsnapshot` file in Chrome DevTools Memory panel for analysis.
