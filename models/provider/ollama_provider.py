@@ -36,6 +36,8 @@ class OllamaProvider(ModelProvider):
         if max_tokens:
             options["num_predict"] = max_tokens
 
+        think = kwargs.get("thinking", False)
+
         last_error = None
         for attempt in range(3):
             try:
@@ -46,6 +48,7 @@ class OllamaProvider(ModelProvider):
                     options=options,
                     keep_alive=keep_alive,
                     format=output_format,
+                    think=think,
                 )
 
                 if response and hasattr(response, "message"):

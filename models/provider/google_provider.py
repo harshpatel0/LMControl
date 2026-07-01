@@ -1,16 +1,6 @@
 import os
 import base64
-from settings.settings import settings
 import time
-
-DO_THINKING = False
-
-if settings.orchestrator.use_autonomy_mode:
-    if settings.models.autonomy_actor.thinking:
-        DO_THINKING = True
-else:
-    if settings.models.actor.thinking:
-        DO_THINKING = True
 
 from .base import ModelProvider, ChatMessage, ChatResponse
 from utils.logger import logger
@@ -98,7 +88,7 @@ class GoogleProvider(ModelProvider):
         if system_prompt:
             config_kwargs["system_instruction"] = system_prompt
 
-        if DO_THINKING:
+        if kwargs.get("thinking", False):
             config_kwargs["thinking_config"] = types.ThinkingConfig(
                 thinking_budget=-1, include_thoughts=True
             )

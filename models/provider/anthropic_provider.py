@@ -7,15 +7,6 @@ from settings.settings import settings
 
 import time
 
-DO_THINKING = False
-
-if settings.orchestrator.use_autonomy_mode:
-    if settings.models.autonomy_actor.thinking:
-        DO_THINKING = True
-else:
-    if settings.models.actor.thinking:
-        DO_THINKING = True
-
 
 class AnthropicProvider(ModelProvider):
     """Provider for Anthropic's Claude models. Uses anthropic Python SDK.
@@ -88,7 +79,7 @@ class AnthropicProvider(ModelProvider):
 
         if system_prompt:
             call_kwargs["system"] = system_prompt
-        if DO_THINKING:
+        if kwargs.get("thinking", False):
             call_kwargs["thinking"] = {"type": "adaptive"}
             call_kwargs["temperature"] = (
                 1.0  # Enabling Thinking forces temperature to 1.0

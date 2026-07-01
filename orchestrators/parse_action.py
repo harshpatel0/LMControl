@@ -13,9 +13,16 @@ pyrun = python.run_python_code.PythonRunner()
 from mcps.mcp_registry import mcp_registry
 from mcps.mcp_loop import run_async
 
+from mcp.types import CallToolResult, TextContent
+from result_types.PrimitiveActionResult import PrimitiveActionResult
+from result_types.KodoSkillResult import KodoSkillResult
 
-def parse_action(action):
+
+def parse_action(
+    action,
+) -> PrimitiveActionResult | CallToolResult | KodoSkillResult:
     return_command = "PROCEED"
+    error_message = ""
 
     if skill_orchestrator.can_handle(action.get("action")):
         result = skill_orchestrator.execute(action)
@@ -30,14 +37,24 @@ def parse_action(action):
             )
 
             if not mcp_registry.check_tool(action["tool"]):
-                return f"The tool {action["tool"]} does not exist"
+                return CallToolResult(
+                    content=[
+                        TextContent(
+                            type="text",
+                            text=f"Tool '{action['tool']}' does not exist in the MCP registry.",
+                        )
+                    ],
+                    isError=True,
+                )
 
             if mcp_call is None:
                 raise AttributeError(
                     "mcps.mcp_registry has no callable 'call' or 'call_tool'"
                 )
-            result = run_async(mcp_call(action["tool"], action["arguments"]))
-            return result
+            tool_call_result: CallToolResult = run_async(
+                mcp_call(action["tool"], action["arguments"])
+            )
+            return tool_call_result
 
         case "click":
             logger.debug(
@@ -50,7 +67,9 @@ def parse_action(action):
                     position_y=int(action["y"]),
                     button=action.get("button", "left"),
                 )
+
             except KeyError:
+                error_message = "Missing Arguments"
                 return_command = "RETRY"
 
         case "double_click":
@@ -65,6 +84,7 @@ def parse_action(action):
                     button=action.get("button", "left"),
                 )
             except KeyError:
+                error_message = "Missing Arguments"
                 return_command = "RETRY"
 
         case "type":
@@ -133,5 +153,8 @@ def parse_action(action):
             return_command = "RETRY"
 
     if not skill_orchestrator.can_handle(action.get("action")):
-        return f"The skill {action.get("action")} does not exist."
-    return return_command
+        error_message = f"The skill {action.get("action")} does not exist."
+
+    return PrimitiveActionResult(
+        action=action, command=return_command, error_message=error_message
+    )

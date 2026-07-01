@@ -121,6 +121,7 @@ def do_step(
     logger.debug(action)
 
     web_emitter.action(action)
+    web_emitter.thinking(chat_response.thinking if chat_response.thinking else "")
 
     logger.info(
         f"Tokens Used: Input: {chat_response.input_tokens} tokens, Output: {chat_response.output_tokens} tokens. Took {round((chat_response.total_duration_ms)/1000)} seconds"

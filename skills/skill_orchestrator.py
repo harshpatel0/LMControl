@@ -14,6 +14,7 @@ VENV_PYTHON = os.path.join(
 )
 
 from python.run_python_code import PythonRunner
+from result_types.KodoSkillResult import KodoSkillResult
 from utils.logger import logger
 
 
@@ -51,9 +52,8 @@ class Skills:
         if skill_metadata["dynamic_context"]:
             skill_entry_point = skill_metadata["entry"]
             output = self._runner.run_skill_context_generator(skill_entry_point)
-            logger.debug(f"Output from generator for {skill}")
 
-            output = json.loads(output)
+            output = json.loads(output.skill_output)
             skill_definition = output[consumer]
             return skill_definition
 
@@ -149,14 +149,15 @@ class Skills:
                             "generated_for_planner"
                         )
 
-                    if definition.get("entry", None):
-                        entry = os.path.join(skill_path, definition["entry"])
+                    entry = definition.get("entry", None)
+                    if entry:
+                        entry = os.path.join(skill_path, entry)
 
-                    if not os.path.exists(entry):
+                    if entry and not os.path.exists(entry):
                         logger.warning(
                             f"Warning: entry '{entry}' not found for skill '{skill_folder}', skipping executable."
                         )
-                    else:
+                    elif entry:
                         skill_entry["executable"] = True
                         skill_entry["actions"] = definition.get("actions", [])
                         skill_entry["description"] = definition.get("description")
@@ -206,13 +207,13 @@ class Skills:
         entry = self._dispatch.get(action_name)
 
         if not entry:
-            return (
-                f"[Skill Orchestrator] No skill registered for action '{action_name}'"
+            return KodoSkillResult(
+                "ERROR",
+                skill_output="",
+                skill_errors=f"No skill registered for action '{action_name}'",
             )
 
-        args = action
-
-        return self._runner.run_skill_by_path(entry, args)
+        return self._runner.run_skill_by_path(entry, action)
 
     def list_actions(self):
         return list(self._dispatch.keys())

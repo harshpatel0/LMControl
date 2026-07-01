@@ -1,5 +1,6 @@
 import re
 import json
+import tiktoken
 
 
 def strip_markdown_json(raw: str) -> str:
@@ -28,7 +29,9 @@ def try_parse_json(raw: str):
     for strategy in (
         lambda s: s,
         lambda s: re.sub(r",\s*([}\]])", r"\1", s),
-        lambda s: re.sub(r"(?<!\\)\b(null|true|false)\b", lambda m: m.group(1).lower(), s),
+        lambda s: re.sub(
+            r"(?<!\\)\b(null|true|false)\b", lambda m: m.group(1).lower(), s
+        ),
     ):
         try:
             return json.loads(strategy(cleaned)), None
@@ -36,3 +39,8 @@ def try_parse_json(raw: str):
             last_error = e
 
     return None, f"Could not parse JSON: {last_error}"
+
+
+def estimate_tokens(text) -> int:
+    encoding = tiktoken.get_encoding("cl100k_base")
+    return len(encoding.encode(text))
