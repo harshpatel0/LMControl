@@ -7,6 +7,8 @@ from context_provider import UITreeHandler
 from skills.skill_orchestrator import skill_orchestrator
 from models.provider import get_provider, ChatMessage, ChatResponse
 
+from server.log_stream import web_emitter
+
 import utils.utils as utils
 import utils.strings as Strings
 from utils.logger import logger
@@ -81,7 +83,10 @@ class SkillInstallationMode:
             temperature=cfg.temperature,
             keep_alive=getattr(cfg, "keep_alive", 0),
             output_format="json",
+            thinking=getattr(cfg, "thinking", False),
         )
+
+        web_emitter.thinking(response.thinking)
 
         raw_content = response.content if response else ""
         skills_data, _ = (
@@ -174,6 +179,7 @@ Treat skill actions as first-class actions alongside the standard ones above.
             temperature=cfg.temperature,
             keep_alive=getattr(cfg, "keep_alive", 0),
             output_format="json",
+            thinking=getattr(cfg, "thinking", False),
         )
 
         return response
@@ -288,6 +294,7 @@ Taskbar Elements
             temperature=cfg.temperature,
             keep_alive=getattr(cfg, "keep_alive", 0),
             output_format="json",
+            thinking=getattr(cfg, "thinking", False),
         )
 
         return response
