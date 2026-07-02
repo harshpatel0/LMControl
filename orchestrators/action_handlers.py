@@ -11,6 +11,7 @@ MAX_ITERATIONS_PER_STEP = (
 MAX_REPLAN_LOOP = settings.orchestrator.planner_architecture.max_replan_loop
 
 from result_types import KodoSkillResult, PrimitiveActionResult, ActionResult
+from interactions.direct_app_control.types import *
 
 
 def handle_proceed(step_count: int, iterations: int, in_autonomy: bool) -> ActionResult:
@@ -236,10 +237,10 @@ def call_action(
     if replan_history is None:
         replan_history = []
 
-    parse_result = parse_action(action=action)
+    parsed_action = parse_action(action=action)
 
-    if isinstance(parse_result, PrimitiveActionResult):
-        command = parse_result.command
+    if isinstance(parsed_action, PrimitiveActionResult):
+        command = parsed_action.command
         if command == "PROCEED":
             action_result = handle_proceed(step_count, iterations, in_autonomy)
         elif command == "DONE":
@@ -253,22 +254,61 @@ def call_action(
             )
         elif command == "RETRY":
             action_result = handle_retry(
-                additional_context, parse_result.error_message, action, iterations
+                additional_context, parsed_action.error_message, action, iterations
             )
         else:
             raise NotImplementedError(f"Unexpected primitive command: {command}")
 
-    elif isinstance(parse_result, KodoSkillResult):
+    elif isinstance(parsed_action, KodoSkillResult):
         action_result = handle_skill_invocations(
-            parse_result, additional_context, in_autonomy, step_count
+            parsed_action, additional_context, in_autonomy, step_count
         )
 
-    elif isinstance(parse_result, CallToolResult):
-        action_result = handle_mcp_tool_call_result(parse_result)
+    elif isinstance(parsed_action, CallToolResult):
+        action_result = handle_mcp_tool_call_result(parsed_action)
+
+    elif isinstance(parsed_action, DirectAppConnectionResult):
+        connection_result_boolean = parsed_action.success
+        connection_result_message = parsed_action.message
+
+        action_result = ActionResult(
+            signal="CONTINUE",
+            step_count=step_count + 1 if not in_autonomy else None,
+            iterations=iterations + 1 if in_autonomy else None,
+            additional_context=f"Direct App Control: Success? {connection_result_boolean}, message: {connection_result_message}",
+        )
+
+    elif isinstance(parsed_action, DirectAppProcessList):
+        process_list_string = str(parsed_action)
+
+        action_result = ActionResult(
+            signal="CONTINUE",
+            step_count=step_count + 1 if not in_autonomy else None,
+            iterations=iterations + 1 if in_autonomy else None,
+            additional_context=f"Processes Found: {process_list_string}",
+        )
+
+    elif isinstance(parsed_action, DirectAppControlListResult):
+        control_list_string = str(parsed_action)
+
+        action_result = ActionResult(
+            signal="CONTINUE",
+            step_count=step_count + 1 if not in_autonomy else None,
+            iterations=iterations + 1 if in_autonomy else None,
+            additional_context=f"Processes Found: {control_list_string}",
+        )
+
+    elif isinstance(parsed_action, DirectAppInteractionResult):
+        action_result = ActionResult(
+            signal="CONTINUE",
+            step_count=step_count + 1 if not in_autonomy else None,
+            iterations=iterations + 1 if in_autonomy else None,
+            additional_context=f"Direct App Interaction: Success? {parsed_action.success}, Message: {parsed_action.message}",
+        )
 
     else:
         logger.warning("Unexpected result path in call_action")
-        raise NotImplementedError(f"Unexpected result type: {type(parse_result)}")
+        raise NotImplementedError(f"Unexpected result type: {type(parsed_action)}")
 
-    action_result.result = parse_result
+    action_result.raw_result = parsed_action
     return action_result

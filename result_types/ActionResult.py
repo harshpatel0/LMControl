@@ -11,4 +11,4 @@ class ActionResult:
     additional_context: str | None = None
     hard_exit: bool | None = None
     temp_task: str | None = None
-    result: Any = None
+    raw_result: Any = None

@@ -66,6 +66,8 @@ ALLOWED_CONTROL_TYPES = {
     "Thumb",
     "ProgressBar",
 }
+
+STRUCTURAL_TYPES = {"Pane", "Group", "Window", "Custom"}
 import platform
 
 IS_RUNNING_WINDOWS = platform.system() == "Windows"

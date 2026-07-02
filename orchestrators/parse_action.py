@@ -17,10 +17,24 @@ from mcp.types import CallToolResult, TextContent
 from result_types.PrimitiveActionResult import PrimitiveActionResult
 from result_types.KodoSkillResult import KodoSkillResult
 
+from interactions.direct_app_control.direct_app_control_handler import (
+    direct_app_handler,
+)
+
+from interactions.direct_app_control.types import *
+
 
 def parse_action(
-    action,
-) -> PrimitiveActionResult | CallToolResult | KodoSkillResult:
+    action: dict,
+) -> (
+    PrimitiveActionResult
+    | CallToolResult
+    | KodoSkillResult
+    | DirectAppConnectionResult
+    | DirectAppProcessList
+    | DirectAppControlListResult
+    | DirectAppInteractionResult
+):
     return_command = "PROCEED"
     error_message = ""
 
@@ -28,6 +42,26 @@ def parse_action(
         result = skill_orchestrator.execute(action)
         logger.debug(f"[SkillOrchestrator] {result}")
         return result
+
+    action_type = action["action"]
+
+    if action_type in [
+        "list_processes",
+        "connect",
+        "list_controls",
+        "interact",
+        "expand",
+        "collapse",
+        "set_value",
+        "scroll",
+        "set_range_value",
+        "get_grid_item",
+        "minimize_window",
+        "maximize_window",
+        "restore_window",
+        "close_window",
+    ]:
+        return direct_app_handler.handle_direct_action(action=action)
 
     match action["action"]:
         case "mcp_tool_call":
