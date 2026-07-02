@@ -1,0 +1,47 @@
+{
+  "servers": [
+    {
+      "name": "winget",
+      "transport": "stdio",
+      "command": "C:\\Users\\harshpatel\\AppData\\Local\\Microsoft\\WindowsApps\\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\\WindowsPackageManagerMCPServer.exe",
+      "args": []
+    },
+    {
+      "name": "chrome-devtools",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--headless=false", "--no-usage-statistics"]
+    },
+    {
+      "name": "filesystem",
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y", 
+        "@modelcontextprotocol/server-filesystem", 
+        "C:\\Users\\harshpatel\\Documents\\KodoWorkingDirectory",
+        "C:\\Users\\harshpatel\\Documents",
+        "C:\\Users\\harshpatel\\Downloads",
+        "C:\\Users\\harshpatel\\Desktop"
+      ]
+    },
+    {
+      "name": "memory",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"]
+    },
+    {
+      "name": "fetch",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"]
+    },
+    {
+      "name": "git",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-git"]
+    }
+  ]
+}

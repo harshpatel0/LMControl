@@ -12,10 +12,10 @@ CURRENT_DIR = Path(__file__).resolve().parent
 
 
 def setup_mcps():
-    from mcps.mcp_registry import mcp_registry
-    from mcps.mcp_loop import run_async
+    from interactions.mcps.mcp_registry import mcp_registry
+    from interactions.mcps.mcp_loop import run_async
 
-    config_path = CURRENT_DIR / "mcps" / "mcp_servers.json"
+    config_path = CURRENT_DIR / "mcp_servers.json"
 
     try:
         with open(config_path, "r", encoding="utf-8") as f:

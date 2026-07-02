@@ -13,7 +13,7 @@ VENV_PYTHON = os.path.join(
     PROJECT_ROOT, PYTHON_RUNNER_VENV_NAME, "Scripts", "python.exe"
 )
 
-from python.run_python_code import PythonRunner
+from interactions.python.run_python_code import PythonRunner
 from result_types.KodoSkillResult import KodoSkillResult
 from utils.logger import logger
 

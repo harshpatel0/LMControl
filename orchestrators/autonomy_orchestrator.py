@@ -2,7 +2,7 @@ import time
 import models.actor_model as actor_model
 from context_provider import ContextProvider
 from orchestrators.action_handlers import call_action
-from skills.skill_orchestrator import skill_orchestrator
+from interactions.skills.skill_orchestrator import skill_orchestrator
 from models.model_definitions import SkillInstallationMode
 from utils import logger
 from settings.settings import settings

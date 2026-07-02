@@ -1,17 +1,17 @@
-from pc_actions.perform_pc_actions import PCActions
-from skills.skill_orchestrator import skill_orchestrator
+from interactions.pc_actions.perform_pc_actions import PCActions
+from interactions.skills.skill_orchestrator import skill_orchestrator
 from utils.logger import logger
 
 import time
 
 pc = PCActions(failsafe=True)
 
-import python.run_python_code
+import interactions.python.run_python_code
 
-pyrun = python.run_python_code.PythonRunner()
+pyrun = interactions.python.run_python_code.PythonRunner()
 
-from mcps.mcp_registry import mcp_registry
-from mcps.mcp_loop import run_async
+from interactions.mcps.mcp_registry import mcp_registry
+from interactions.mcps.mcp_loop import run_async
 
 from mcp.types import CallToolResult, TextContent
 from result_types.PrimitiveActionResult import PrimitiveActionResult

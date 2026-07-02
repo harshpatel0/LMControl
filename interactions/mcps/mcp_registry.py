@@ -1,4 +1,4 @@
-from mcps.mcp_client import MCPClient
+from interactions.mcps.mcp_client import MCPClient
 from utils.logger import logger
 
 

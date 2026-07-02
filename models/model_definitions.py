@@ -4,7 +4,7 @@ root = rootutils.setup_root(__file__, pythonpath=True)
 
 from context_provider import ContextProvider
 from context_provider import UITreeHandler
-from skills.skill_orchestrator import skill_orchestrator
+from interactions.skills.skill_orchestrator import skill_orchestrator
 from models.provider import get_provider, ChatMessage, ChatResponse
 
 from server.log_stream import web_emitter
@@ -15,7 +15,7 @@ from utils.logger import logger
 
 from settings.settings import settings
 
-from mcps.mcp_registry import mcp_registry
+from interactions.mcps.mcp_registry import mcp_registry
 
 context_provider = ContextProvider()
 ui_tree_handler = UITreeHandler()
