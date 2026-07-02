@@ -6,6 +6,7 @@ from typing import Literal
 class DirectAppConnectionResult:
     success: bool
     message: str
+    controls_text: str = ""
 
 
 @dataclass

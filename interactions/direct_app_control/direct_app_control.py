@@ -50,7 +50,12 @@ class DirectAppController:
             )
             self.connected_pid = process_id
 
-            return DirectAppConnectionResult(success=True, message="Connected")
+            controls = self.list_controls()
+            return DirectAppConnectionResult(
+                success=True,
+                message="Connected",
+                controls_text=str(controls) if controls.controls else "",
+            )
         except pywinauto.application.ProcessNotFoundError:
             return DirectAppConnectionResult(
                 success=False, message=f"Process with ID {process_id} was not found"

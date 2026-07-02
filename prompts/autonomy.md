@@ -145,10 +145,9 @@ The accessibility tree you receive in your context only shows the **currently fo
 Every time you need to interact with an app, follow this strict sequence:
 
 1. **`list_processes`** — discover running top-level windows → pick the right `process_id`.
-2. **`connect`** — attach to that `process_id`. Must be done before any control action.
-3. **`list_controls`** — get all interactable controls in the connected window (returns `control_id`, `type`, `name`, `value`, `enabled`). *Note: Provide an empty string `""` for `control_id` if requesting the root tree.*
-4. **Evaluate & Act:** Pick the matching action based on the control `type` and act using its `control_id`.
-5. **Dynamic UI Updates:** If you interact with a container that opens a menu or reveals new items (like using `expand` on a `ComboBox`), you **MUST run `list_controls` again** to retrieve the runtime IDs of the newly revealed child elements before trying to select them.
+2. **`connect`** — attach to that `process_id`. `connect` automatically runs `list_controls` and returns the control tree in the response — you can skip the separate `list_controls` call. Must be done before any other control action.
+3. **Evaluate & Act:** Pick the matching action based on the control `type` and act using its `control_id`.
+4. **Dynamic UI Updates:** If you interact with a container that opens a menu or reveals new items (like using `expand` on a `ComboBox`), you **MUST run `list_controls` again** to retrieve the runtime IDs of the newly revealed child elements before trying to select them.
 
 You can re-`connect` to switch apps. No explicit disconnect needed.
 

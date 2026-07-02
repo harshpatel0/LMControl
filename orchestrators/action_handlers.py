@@ -270,12 +270,16 @@ def call_action(
     elif isinstance(parsed_action, DirectAppConnectionResult):
         connection_result_boolean = parsed_action.success
         connection_result_message = parsed_action.message
+        controls = parsed_action.controls_text
+        context = f"Direct App Control: Success? {connection_result_boolean}, message: {connection_result_message}"
+        if controls:
+            context += f"\nControls Found: {controls}"
 
         action_result = ActionResult(
             signal="CONTINUE",
             step_count=step_count + 1 if not in_autonomy else None,
             iterations=iterations + 1 if in_autonomy else None,
-            additional_context=f"Direct App Control: Success? {connection_result_boolean}, message: {connection_result_message}",
+            additional_context=context,
         )
 
     elif isinstance(parsed_action, DirectAppProcessList):
